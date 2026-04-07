@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HCCL — League Stats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0b;--bg2:#111114;--bg3:#18181c;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f0f0;--muted:#888;--dim:#555;
+  --accent:#e8ff47;--gold:#f5a623;--silver:#a8b2c0;--bronze:#cd7f32;
+  --green:#2ecc71;--red:#e74c3c;--blue:#5dade2;--orange:#e67e22;
+  --radius:4px;--radius-lg:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-weight:400;min-height:100vh;line-height:1.5;}
+.header{border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;background:var(--bg);z-index:100;gap:12px;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.3rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);white-space:nowrap;}
+.logo span{color:var(--text);font-weight:400;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.admin-btn{font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border:1px solid var(--border2);background:transparent;color:var(--muted);border-radius:var(--radius);cursor:pointer;transition:all .2s;}
+.admin-btn:hover{color:var(--text);border-color:var(--accent);}
+.admin-btn.active{color:var(--accent);border-color:var(--accent);}
+.sync-status{font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;color:var(--dim);padding:4px 10px;border-radius:var(--radius);border:1px solid var(--border);}
+.sync-status.ok{color:var(--green);border-color:rgba(46,204,113,0.3);}
+.sync-status.err{color:var(--red);border-color:rgba(231,76,60,0.3);}
+.sync-status.loading{color:var(--gold);}
+.context-bar{border-bottom:1px solid var(--border);padding:8px 2rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg2);}
+.ctx-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);}
+.ctx-select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:13px;padding:5px 10px;font-family:'Barlow',sans-serif;cursor:pointer;}
+.ctx-select:focus{outline:none;border-color:var(--accent);}
+.ctx-divider{width:1px;height:20px;background:var(--border2);}
+.nav-bar{border-bottom:1px solid var(--border);padding:0 2rem;display:flex;gap:0;overflow-x:auto;}
+.nav-bar button{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:14px 18px;background:transparent;color:var(--dim);border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.nav-bar button:hover{color:var(--muted);}
+.nav-bar button.active{color:var(--accent);border-bottom-color:var(--accent);}
+.main{max-width:1200px;margin:0 auto;padding:2rem;}
+.admin-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:2rem;display:none;}
+.admin-panel.visible{display:block;}
+.admin-section{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.admin-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.admin-section h3{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;}
+.field-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--dim);font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;}
+.field input,.field select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:13px;padding:7px 10px;font-family:'Barlow',sans-serif;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(232,255,71,0.03);}
+.upload-zone input{display:none;}
+.upload-zone p{color:var(--muted);font-size:14px;margin-bottom:4px;}
+.upload-zone small{color:var(--dim);font-size:12px;}
+.upload-arrow{width:28px;height:28px;margin:0 auto 10px;border:1.5px solid var(--dim);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.upload-arrow svg{width:14px;height:14px;color:var(--muted);}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;}
+.btn{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:7px 16px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted);transition:all .2s;}
+.btn:hover{color:var(--text);}
+.btn-accent{border-color:var(--accent);color:var(--accent);}
+.btn-accent:hover{background:rgba(232,255,71,0.08);}
+.btn-danger{border-color:rgba(231,76,60,0.3);color:var(--red);}
+.btn-danger:hover{background:rgba(231,76,60,0.1);}
+.btn-sync{border-color:rgba(93,173,226,0.4);color:var(--blue);}
+.btn-sync:hover{background:rgba(93,173,226,0.08);}
+.chip{display:inline-block;padding:3px 10px;border-radius:2px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--border);color:var(--muted);margin:2px;}
+.race-list-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;flex-wrap:wrap;}
+.race-list-item:last-child{border-bottom:none;}
+.del-btn{font-size:11px;color:var(--dim);cursor:pointer;padding:2px 6px;border:1px solid transparent;border-radius:2px;white-space:nowrap;}
+.del-btn:hover{color:var(--red);border-color:rgba(231,76,60,0.3);}
+.lock-screen{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;}
+.lock-screen.visible{display:flex;}
+.lock-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;width:320px;max-height:calc(100vh - 4rem);overflow-y:auto;margin:auto;}
+.lock-box h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;color:var(--accent);}
+.lock-box p{font-size:13px;color:var(--muted);margin-bottom:1.2rem;}
+.lock-box input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-size:14px;padding:9px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.1em;}
+.lock-box input:focus{outline:none;border-color:var(--accent);}
+.lock-box .lock-btns{display:flex;gap:8px;}
+.lock-box button{flex:1;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:9px;border-radius:var(--radius);cursor:pointer;transition:all .2s;}
+.btn-confirm{background:var(--accent);color:#0a0a0b;border:none;}
+.btn-confirm:hover{background:#d4eb30;}
+.btn-cancel{background:transparent;border:1px solid var(--border2);color:var(--muted);}
+.btn-cancel:hover{color:var(--text);}
+.lock-err{font-size:12px;color:var(--red);margin-bottom:8px;display:none;}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:2rem;}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;}
+.metric .label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.metric .value{font-size:28px;font-weight:300;color:var(--text);line-height:1;}
+.metric .sub{font-size:12px;color:var(--dim);margin-top:4px;}
+.class-section{margin-bottom:2.5rem;}
+.class-section-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.class-section-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1.5rem;}
+.table-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.table-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.badge{display:inline-block;padding:2px 8px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.b-p1{background:rgba(245,166,35,0.15);color:var(--gold);}
+.b-p2{background:rgba(168,178,192,0.15);color:var(--silver);}
+.b-p3{background:rgba(205,127,50,0.15);color:var(--bronze);}
+.b-dnf{background:rgba(231,76,60,0.12);color:var(--red);}
+.b-fl{background:rgba(232,255,71,0.1);color:var(--accent);}
+.b-q{background:rgba(93,173,226,0.12);color:var(--blue);}
+.b-r{background:rgba(46,204,113,0.12);color:var(--green);}
+.b-champ{background:rgba(245,166,35,0.15);color:var(--gold);font-size:12px;padding:3px 10px;}
+.b-dsq{background:rgba(231,76,60,0.18);color:var(--red);border:1px solid rgba(231,76,60,0.3);}
+.b-pen{background:rgba(230,126,34,0.15);color:var(--orange);}
+.pos-gain{color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.pos-lose{color:var(--red);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.pos-same{color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:12px;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.spos{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--dim);}
+.spos.p1{color:var(--gold);}.spos.p2{color:var(--silver);}.spos.p3{color:var(--bronze);}
+.driver-name{font-weight:500;font-size:14px;}
+.bar-cell{display:flex;align-items:center;gap:10px;}
+.bar-track{flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;min-width:60px;}
+.bar-fill{height:100%;border-radius:2px;}
+.gap-txt{font-size:11px;color:var(--dim);min-width:32px;font-family:'JetBrains Mono',monospace;}
+.search-input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;padding:6px 12px;font-family:'Barlow',sans-serif;width:200px;}
+.search-input:focus{outline:none;border-color:var(--border2);}
+.search-input::placeholder{color:var(--dim);}
+.race-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.2rem;overflow:hidden;}
+.race-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.race-title{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.race-meta{font-size:12px;color:var(--dim);margin-top:2px;}
+.msg{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;}
+.msg-ok{background:rgba(46,204,113,0.1);color:var(--green);border:1px solid rgba(46,204,113,0.2);}
+.msg-err{background:rgba(231,76,60,0.1);color:var(--red);border:1px solid rgba(231,76,60,0.2);}
+.msg-info{background:rgba(93,173,226,0.1);color:var(--blue);border:1px solid rgba(93,173,226,0.2);}
+.empty{padding:4rem 2rem;text-align:center;color:var(--dim);font-size:14px;}
+.tab-content{display:none;}
+.tab-content.visible{display:block;}
+.hall-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:2rem;}
+.hall-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.hall-card-title{padding:10px 16px;border-bottom:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.hall-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap;gap:4px;}
+.hall-row:last-child{border-bottom:none;}
+.hall-num{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;}
+.season-list{display:grid;gap:12px;margin-bottom:2rem;}
+.season-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.2rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.season-stat .s-val{font-size:20px;font-weight:300;}.season-stat .s-lbl{font-size:11px;color:var(--dim);font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;}
+.footer{border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;font-size:11px;color:var(--dim);font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;margin-top:3rem;}
+.sync-code-display{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:.2em;color:var(--accent);padding:12px 16px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border2);display:inline-block;margin:8px 0;}
+@media(max-width:600px){.header,.nav-bar,.context-bar,.main{padding-left:1rem;padding-right:1rem;}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">HCCL <span>League Stats</span></div>
+  <div class="header-right">
+    <span class="sync-status" id="syncStatus">Not synced</span>
+    <button class="admin-btn" id="syncBtn">Sync</button>
+    <button class="admin-btn" id="adminToggle">Admin</button>
+  </div>
+</header>
+
+<div class="context-bar">
+  <span class="ctx-label">Season</span>
+  <select class="ctx-select" id="seasonFilter"><option value="all">All seasons</option></select>
+  <div class="ctx-divider"></div>
+  <span class="ctx-label">Championship</span>
+  <select class="ctx-select" id="champFilter"><option value="all">All championships</option></select>
+  <div class="ctx-divider"></div>
+  <span class="ctx-label">Class</span>
+  <select class="ctx-select" id="classFilter">
+    <option value="all">All classes</option>
+    <option value="GT3">GT3</option><option value="GT4">GT4</option>
+    <option value="GT2">GT2</option><option value="ST">ST</option>
+    <option value="TCX">TCX</option><option value="CUP">CUP</option>
+    <option value="CHL">CHL</option>
+  </select>
+</div>
+
+<nav class="nav-bar" id="navBar">
+  <button class="active" data-tab="standings">Standings</button>
+  <button data-tab="drivers">Drivers</button>
+  <button data-tab="races">Races</button>
+  <button data-tab="laps">Lap Times</button>
+  <button data-tab="alltime">All-Time</button>
+  <button data-tab="records">Track Records</button>
+</nav>
+
+<main class="main">
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+
+  <!-- CLOUD SYNC -->
+  <div class="admin-section">
+    <h3>League Cloud Sync</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Push data to the cloud so members can sync with a code. Uses <strong style="color:var(--text)">GetPantry.cloud</strong> — free, no account needed, full browser support.</p>
+    <p style="font-size:12px;color:var(--dim);margin-bottom:12px;">Step 1: Visit <a href="https://getpantry.cloud" target="_blank" style="color:var(--blue)">getpantry.cloud</a> and create a free pantry. Copy the Pantry ID it gives you. &nbsp;Step 2: Set a league code (this is what you share with members). &nbsp;Step 3: Push.</p>
+    <div class="field-row">
+      <div class="field">
+        <label>Pantry ID (your private key)</label>
+        <input type="text" id="pantryIdInput" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="width:320px;font-family:'JetBrains Mono',monospace;font-size:12px;">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>League code (share with members)</label>
+        <input type="text" id="leagueCodeInput" placeholder="e.g. HCCL2024" style="width:180px;font-family:'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;">
+      </div>
+      <button class="btn btn-accent" id="saveLeagueCode" style="align-self:flex-end">Save</button>
+      <button class="btn btn-sync" id="pushDataBtn" style="align-self:flex-end">Push to cloud &#8593;</button>
+    </div>
+    <div id="leagueCodeDisplay" style="margin-top:8px;"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Local backup — export/import the full database as a JSON file:</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-accent" id="exportDataBtn">&#8595; Export database</button>
+        <button class="btn btn-sync" id="importDataBtn">&#8593; Import database</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none">
+      </div>
+    </div>
+    <div id="syncMsg" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- SEASONS & CHAMPIONSHIPS -->
+  <div class="admin-section">
+    <h3>Seasons &amp; Championships</h3>
+    <div class="field-row">
+      <div class="field"><label>Season name</label><input type="text" id="newSeasonName" placeholder="e.g. Season 1" style="width:160px"></div>
+      <div class="field"><label>Championship name</label><input type="text" id="newChampName" placeholder="e.g. GT3 Pro Cup" style="width:180px"></div>
+      <button class="btn btn-accent" id="addSeasonBtn" style="align-self:flex-end">Add</button>
+    </div>
+    <div id="seasonChampList" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- CLASS SPLITS -->
+  <div class="admin-section">
+    <h3>Class Splits (optional)</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Add sub-classes within a championship using the driver cupCategory number from the JSON. Points are paid per split class independently.</p>
+    <div class="field-row">
+      <div class="field"><label>Championship</label><select class="ctx-select" id="splitChamp" style="min-width:160px;"></select></div>
+      <div class="field"><label>Split name</label><input type="text" id="splitName" placeholder="e.g. GT Pro" style="width:120px"></div>
+      <div class="field"><label>cupCategory #</label><input type="number" id="splitCategory" min="0" max="10" placeholder="e.g. 3" style="width:80px"></div>
+      <button class="btn btn-accent" id="addSplitBtn" style="align-self:flex-end">Add split</button>
+    </div>
+    <div id="splitsList" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="admin-section">
+    <h3>Upload Race Results</h3>
+    <div class="field-row" style="margin-bottom:12px;">
+      <div class="field"><label>Season</label><select class="ctx-select" id="uploadSeason" style="min-width:160px;"></select></div>
+      <div class="field"><label>Championship</label><select class="ctx-select" id="uploadChamp" style="min-width:160px;"></select></div>
+    </div>
+    <div class="upload-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".json" multiple>
+      <div class="upload-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 20h16"/></svg></div>
+      <p>Drop gportal ACC result JSON files here</p>
+      <small>UTF-16 LE supported — select season &amp; championship first</small>
+    </div>
+    <div id="msgBox" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- MANUAL ENTRY -->
+  <div class="admin-section">
+    <h3>Manual Race Entry</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enter results manually if a JSON file is unavailable.</p>
+    <div class="field-row">
+      <div class="field"><label>Season</label><select class="ctx-select" id="manualSeason" style="min-width:140px;"></select></div>
+      <div class="field"><label>Championship</label><select class="ctx-select" id="manualChamp" style="min-width:140px;"></select></div>
+      <button class="btn btn-accent" id="openManualBtn" style="align-self:flex-end">Enter results</button>
+    </div>
+  </div>
+
+  <!-- LOADED RACES -->
+  <div class="admin-section">
+    <h3>Loaded Races</h3>
+    <div id="adminRaceList"><div style="color:var(--dim);font-size:13px;">No races loaded.</div></div>
+    <div class="admin-actions">
+      <button class="btn btn-danger" id="clearBtn">Clear all data</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="tab-content visible" id="tab-standings"><div id="standingsContent"><div class="empty">No data loaded.</div></div></div>
+<div class="tab-content" id="tab-drivers"><div id="driversContent"><div class="empty">No data loaded.</div></div></div>
+<div class="tab-content" id="tab-races"><div id="racesContent"><div class="empty">No data loaded.</div></div></div>
+<div class="tab-content" id="tab-laps"><div id="lapsContent"><div class="empty">No data loaded.</div></div></div>
+<div class="tab-content" id="tab-alltime"><div id="alltimeContent"><div class="empty">No data loaded.</div></div></div>
+<div class="tab-content" id="tab-records"><div id="recordsContent"><div class="empty">No data loaded.</div></div></div>
+
+</main>
+<footer class="footer">HCCL &mdash; Stats Portal</footer>
+
+<!-- PENALTY OVERLAY -->
+<div class="lock-screen" id="penaltyOverlay">
+  <div class="lock-box" style="width:620px;max-width:95vw;"><div id="penaltyPanel"></div></div>
+</div>
+
+<!-- MANUAL ENTRY OVERLAY -->
+<div class="lock-screen" id="manualOverlay">
+  <div class="lock-box" style="width:700px;max-width:96vw;"><div id="manualPanel"></div></div>
+</div>
+
+<!-- SYNC PULL OVERLAY -->
+<div class="lock-screen" id="syncOverlay">
+  <div class="lock-box">
+    <h3>Join League</h3>
+    <p>Enter your sync code to load the latest standings. Format: <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">PANTRYID|LEAGUECODE</span><br><span style="font-size:11px;color:var(--dim)">Your admin will share this with you.</span></p>
+    <input type="text" id="syncCodeInput" placeholder="LEAGUECODE" style="text-transform:uppercase;letter-spacing:.1em;" autocomplete="off">
+    <div class="lock-err" id="syncErr" style="display:none;">Code not found. Check the code and ask your admin to push data first.</div>
+    <div class="lock-btns">
+      <button class="btn-cancel" id="syncCancel">Cancel</button>
+      <button class="btn-confirm" id="syncConfirm">Load data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOCK -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <h3>Admin Access</h3>
+    <p>Enter the admin password to manage race data.</p>
+    <input type="password" id="pwInput" placeholder="Password" autocomplete="off">
+    <div class="lock-err" id="lockErr">Incorrect password.</div>
+    <div class="lock-btns">
+      <button class="btn-cancel" id="lockCancel">Cancel</button>
+      <button class="btn-confirm" id="lockConfirm">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────
+const ADMIN_PASSWORD = 'hccl2024'; // ← Change this
+const POINTS = [32,27,23,20,17,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
+const FL_BONUS = 1;
+const LS_KEY = 'hccl_v3';
+
+// ── CAR DATA ─────────────────────────────────────────────
+const CAR_MODELS = {
+  0:{name:'Porsche 911 GT3R',class:'GT3'},1:{name:'Mercedes AMG GT3',class:'GT3'},
+  2:{name:'Ferrari 488 GT3',class:'GT3'},3:{name:'Audi R8 LMS GT3',class:'GT3'},
+  4:{name:'Lamborghini Huracán GT3',class:'GT3'},5:{name:'McLaren 650S GT3',class:'GT3'},
+  6:{name:'Nissan GTR NISMO GT3 2018',class:'GT3'},7:{name:'BMW M6 GT3',class:'GT3'},
+  8:{name:'Bentley Continental GT3 2018',class:'GT3'},9:{name:'Porsche 911 II GT3 Cup',class:'CUP'},
+  10:{name:'Nissan GTR NISMO GT3 2015',class:'GT3'},11:{name:'Bentley Continental GT3 2015',class:'GT3'},
+  12:{name:'Aston Martin V12 Vantage GT3',class:'GT3'},13:{name:'Reiter Engineering R-EX GT3',class:'GT3'},
+  14:{name:'Emil Frey Jaguar G3',class:'GT3'},15:{name:'Lexus RC F GT3',class:'GT3'},
+  16:{name:'Lamborghini Huracán Evo GT3',class:'GT3'},17:{name:'Honda NSX GT3',class:'GT3'},
+  18:{name:'Lamborghini Huracán Super Trofeo',class:'ST'},19:{name:'Audi R8 LMS EVO GT3',class:'GT3'},
+  20:{name:'AMR V8 Vantage GT3',class:'GT3'},21:{name:'Honda NSX Evo GT3',class:'GT3'},
+  22:{name:'McLaren 720S GT3',class:'GT3'},23:{name:'Porsche 911 II GT3R',class:'GT3'},
+  24:{name:'Ferrari 488 EVO GT3',class:'GT3'},25:{name:'Mercedes AMG EVO GT3',class:'GT3'},
+  26:{name:'BMW M4 GT3',class:'GT3'},27:{name:'Ferrari 488 Challenge Evo',class:'CHL'},
+  28:{name:'BMW M2 CS Racing',class:'TCX'},29:{name:'Porsche 911 GT3 Cup (992)',class:'CUP'},
+  30:{name:'Lamborghini Huracán Super Trofeo EVO2',class:'ST'},31:{name:'Audi R8 LMS EVO II GT3',class:'GT3'},
+  32:{name:'Ferrari 296 GT3',class:'GT3'},33:{name:'Lamborghini Huracán GT3 Evo2',class:'GT3'},
+  34:{name:'Porsche 911 GT3 R (992)',class:'GT3'},35:{name:'McLaren 720S GT3 Evo',class:'GT3'},
+  36:{name:'Ford Mustang GT3',class:'GT3'},
+  50:{name:'Alpine A110 GT4',class:'GT4'},51:{name:'AMR V8 Vantage GT4',class:'GT4'},
+  52:{name:'Audi R8 LMS GT4',class:'GT4'},53:{name:'BMW M4 GT4',class:'GT4'},
+  55:{name:'Chevrolet Camaro R GT4',class:'GT4'},56:{name:'Ginetta G55 GT4',class:'GT4'},
+  57:{name:'KTM X-BOW GT4',class:'GT4'},58:{name:'Maserati Granturismo MC GT4',class:'GT4'},
+  59:{name:'McLaren 570S GT4',class:'GT4'},60:{name:'Mercedes AMG GT4',class:'GT4'},
+  61:{name:'Porsche 718 Cayman GT4 Clubsport',class:'GT4'},
+  80:{name:'Audi R8 LMS GT2',class:'GT2'},82:{name:'KTM X-Bow GT2',class:'GT2'},
+  83:{name:'Maserati MC20 GT2',class:'GT2'},84:{name:'Mercedes-AMG GT2',class:'GT2'},
+  85:{name:'Porsche 911 RS CS Evo GT2',class:'GT2'},86:{name:'Porsche 935 GT2',class:'GT2'},
+};
+const CLASS_COLORS = {
+  GT3:{bg:'rgba(232,255,71,0.1)',color:'#e8ff47'},GT4:{bg:'rgba(93,173,226,0.1)',color:'#5dade2'},
+  GT2:{bg:'rgba(231,76,60,0.12)',color:'#e74c3c'},ST:{bg:'rgba(155,89,182,0.12)',color:'#a569bd'},
+  TCX:{bg:'rgba(230,126,34,0.12)',color:'#e67e22'},CUP:{bg:'rgba(46,204,113,0.12)',color:'#2ecc71'},
+  CHL:{bg:'rgba(245,166,35,0.15)',color:'#f5a623'},
+};
+const CLASS_ORDER = ['GT3','GT4','GT2','ST','TCX','CUP','CHL'];
+function getCarInfo(n){const k=parseInt(n);return CAR_MODELS[k]||{name:`Car #${n}`,class:'GT3'};}
+function classBadge(cls){
+  const c=CLASS_COLORS[cls]||{bg:'rgba(136,136,136,0.12)',color:'#888'};
+  return `<span style="display:inline-block;padding:1px 7px;border-radius:2px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:${c.bg};color:${c.color}">${cls}</span>`;
+}
+
+// ── STATE ────────────────────────────────────────────────
+let adminUnlocked = false;
+// dataUrl removed — using cloud sync instead
+let store = {seasons:[],championships:[],races:[]};
+
+// ── STORAGE ──────────────────────────────────────────────
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({store,leagueCode,pantryIdStored}));}catch(e){}}
+function load(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    if(d.store)store=d.store;
+    if(d.leagueCode)leagueCode=d.leagueCode;
+    if(d.pantryIdStored)pantryIdStored=d.pantryIdStored;
+    store.championships.forEach(c=>{if(!c.classSplits)c.classSplits=[];});
+    // clear any stale dataUrl that caused CORS errors on auto-load
+    localStorage.setItem(LS_KEY,JSON.stringify({store,leagueCode}));
+  }catch(e){}
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// ── EXPORT / IMPORT / URL ────────────────────────────────
+function exportDatabase(){
+  const json=JSON.stringify(store,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='hccl_database.json';a.click();
+  URL.revokeObjectURL(url);
+  showSyncMsg('Exported hccl_database.json — share this file with your league.',false);
+}
+function importDatabase(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      if(!parsed.races)throw new Error('Invalid database file');
+      store=parsed;
+      store.championships.forEach(c=>{if(!c.classSplits)c.classSplits=[];});
+      save();refreshAll();
+      showSyncMsg('Database imported successfully.',false);
+    }catch(err){showSyncMsg('Import failed: '+err.message,true);}
+  };
+  reader.readAsText(file);
+}
+async function loadFromUrl(url){
+  if(!url){showSyncMsg('Enter a URL first.',true);return;}
+  showSyncMsg('Loading…',null);
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const parsed=await res.json();
+    if(!parsed.races)throw new Error('Invalid data format');
+    store=parsed;
+    store.championships.forEach(c=>{if(!c.classSplits)c.classSplits=[];});
+    save();refreshAll();
+    showSyncMsg('Data loaded from URL successfully.',false);
+  }catch(e){showSyncMsg('Load failed: '+e.message+'. Check the URL and CORS headers.',true);}
+}
+
+
+// ── UTILS ────────────────────────────────────────────────
+function msToTime(ms){
+  if(!ms||ms<=0)return '—';
+  const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),ms2=ms%1000;
+  return m>0?`${m}:${String(s).padStart(2,'0')}.${String(ms2).padStart(3,'0')}`:`${s}.${String(ms2).padStart(3,'0')}`;
+}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+function seasonName(id){const s=store.seasons.find(s=>s.id===id);return s?s.name:'?';}
+function champName(id){const c=store.championships.find(c=>c.id===id);return c?c.name:'?';}
+function avgFinish(d){return d.positions.length?d.positions.reduce((a,b)=>a+b,0)/d.positions.length:99;}
+
+// ── SPLIT RESOLUTION ─────────────────────────────────────
+// For a championship, get the effective split label for a driver result
+// Returns split name if cupCategory matches a defined split, else carClass
+function getSplitLabel(champId, cupCategory, carClass){
+  const champ=store.championships.find(c=>c.id===champId);
+  if(!champ||!champ.classSplits||!champ.classSplits.length)return carClass;
+  const split=champ.classSplits.find(s=>String(s.category)===String(cupCategory));
+  return split?split.name:carClass;
+}
+
+// ── BUILD DRIVERS ─────────────────────────────────────────
+// groupKey: function(result, race) -> string used to bucket drivers for standings
+// Default = carClass. With splits = splitLabel
+function buildDriversGrouped(races, champId){
+  // champId optional: if provided, use split resolution
+  const drivers={};
+  function init(name,group){
+    const key=`${name}|||${group}`;
+    if(!drivers[key])drivers[key]={name,group,races:0,wins:0,podiums:0,poles:0,points:0,
+      classWins:{},winsByClass:{},polesByClass:{},positions:[],gridPositions:[],fastestLaps:0,bestLap:Infinity,
+      carName:'',carClass:'',positionsGained:0};
+    return key;
+  }
+  races.forEach(race=>{
+    // Determine split label per result
+    const resultGroup=r=>{
+      if(champId)return getSplitLabel(champId,r.cupCategory,r.carClass);
+      return r.carClass||'GT3';
+    };
+
+    // Per-group fastest laps
+    const groupFastest={};
+    race.results.forEach(r=>{
+      if(r.dsq)return;
+      const g=resultGroup(r);
+      if(r.bestLap>0&&(!groupFastest[g]||r.bestLap<groupFastest[g].lap))
+        groupFastest[g]={driver:r.name,lap:r.bestLap};
+    });
+
+    // Group class positions by effectivePos
+    const groupPos={};
+    race.results.forEach(r=>{
+      if(r.dsq)return;
+      const g=resultGroup(r);
+      if(!groupPos[g])groupPos[g]=[];
+      groupPos[g].push({name:r.name,epos:r.effectivePos||r.pos});
+    });
+    Object.values(groupPos).forEach(arr=>arr.sort((a,b)=>a.epos-b.epos));
+
+    race.results.forEach(r=>{
+      const g=resultGroup(r);
+      const key=init(r.name,g);
+      const d=drivers[key];
+      const epos=r.dsq?999:(r.effectivePos||r.pos);
+      d.races++;d.positions.push(epos);d.gridPositions.push(r.gridPos);
+      if(!r.dsq){
+        if(epos===1)d.wins++;
+        if(epos<=3)d.podiums++;
+        if(r.gridPos===1)d.poles++;
+        if(groupPos[g]?.[0]?.name===r.name)d.classWins[g]=(d.classWins[g]||0)+1;
+        if(epos===1){d.winsByClass[g]=(d.winsByClass[g]||0)+1;}
+        if(r.gridPos===1){d.polesByClass[g]=(d.polesByClass[g]||0)+1;}
+        d.positionsGained+=(r.gridPos-epos);
+      }
+      if(r.carName){d.carName=r.carName;d.carClass=r.carClass;}
+      if(race.sessionType==='R'&&!r.dsq)d.points+=(r.points||0);
+      if(!r.dsq&&r.bestLap>0&&r.bestLap<d.bestLap)d.bestLap=r.bestLap;
+    });
+    Object.values(groupFastest).forEach(fl=>{
+      const key=Object.keys(drivers).find(k=>k.startsWith(fl.driver+'|||'));
+      if(key)drivers[key].fastestLaps++;
+    });
+  });
+  return drivers;// keyed by "name|||group"
+}
+
+// Simple flat driver stats (all groups merged, for all-time)
+function buildDriversFlat(races){
+  const drivers={};
+  function init(name){
+    if(!drivers[name])drivers[name]={name,races:0,wins:0,podiums:0,poles:0,points:0,
+      classWins:{},winsByClass:{},polesByClass:{},positions:[],gridPositions:[],fastestLaps:0,bestLap:Infinity,
+      carName:'',carClass:'',positionsGained:0};
+  }
+  races.forEach(race=>{
+    const classFastest={};
+    race.results.forEach(r=>{
+      if(r.dsq)return;
+      const cls=r.carClass||'GT3';
+      if(r.bestLap>0&&(!classFastest[cls]||r.bestLap<classFastest[cls].lap))
+        classFastest[cls]={driver:r.name,lap:r.bestLap};
+    });
+    const classPosMap={};
+    race.results.forEach(r=>{
+      if(r.dsq)return;
+      const cls=r.carClass||'GT3';
+      if(!classPosMap[cls])classPosMap[cls]=[];
+      classPosMap[cls].push({name:r.name,epos:r.effectivePos||r.pos});
+    });
+    Object.values(classPosMap).forEach(arr=>arr.sort((a,b)=>a.epos-b.epos));
+    race.results.forEach(r=>{
+      init(r.name);
+      const d=drivers[r.name];
+      const epos=r.dsq?999:(r.effectivePos||r.pos);
+      d.races++;d.positions.push(epos);d.gridPositions.push(r.gridPos);
+      if(!r.dsq){
+        if(epos===1){d.wins++;d.classWins[cls]=(d.classWins[cls]||0)+1;if(epos===1)d.winsByClass[cls]=(d.winsByClass[cls]||0)+1;} if(epos<=3)d.podiums++; if(r.gridPos===1){d.poles++;d.polesByClass[cls]=(d.polesByClass[cls]||0)+1;d.classPoles[cls]=(d.classPoles[cls]||0)+1;}
+        const cls=r.carClass||'GT3';
+
+        d.positionsGained+=(r.gridPos-epos);
+      }
+      if(r.carName){d.carName=r.carName;d.carClass=r.carClass;}
+      if(race.sessionType==='R'&&!r.dsq)d.points+=(r.points||0);
+      if(!r.dsq&&r.bestLap>0&&r.bestLap<d.bestLap)d.bestLap=r.bestLap;
+    });
+    Object.values(classFastest).forEach(fl=>{if(drivers[fl.driver])drivers[fl.driver].fastestLaps++;});
+  });
+  return drivers;
+}
+
+function filteredRaces(){
+  const sv=document.getElementById('seasonFilter').value;
+  const cv=document.getElementById('champFilter').value;
+  const clv=document.getElementById('classFilter').value;
+  return store.races.filter(r=>{
+    const sOk=sv==='all'||r.seasonId===sv;
+    const cOk=cv==='all'||r.champId===cv;
+    const clOk=clv==='all'||r.results.some(res=>res.carClass===clv);
+    return sOk&&cOk&&clOk;
+  });
+}
+
+// ── ENCODING / PARSING ───────────────────────────────────
+function decodeBuffer(buf){
+  const b=new Uint8Array(buf);
+  if(b[0]===0xFF&&b[1]===0xFE)return new TextDecoder('utf-16le').decode(buf);
+  if(b[0]===0xFE&&b[1]===0xFF)return new TextDecoder('utf-16be').decode(buf);
+  if(b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF)return new TextDecoder('utf-8').decode(buf);
+  if(b[0]===0x7B&&b[1]===0x00)return new TextDecoder('utf-16le').decode(buf);
+  if(b[0]===0x00&&b[1]===0x7B)return new TextDecoder('utf-16be').decode(buf);
+  return new TextDecoder('utf-8').decode(buf);
+}
+function removeDupKeys(text){
+  const stack=[];let out='',i=0,inStr=false,esc=false;const n=text.length;
+  while(i<n){
+    const c=text[i];
+    if(esc){out+=c;esc=false;i++;continue;}
+    if(c==='\\'&&inStr){out+=c;esc=true;i++;continue;}
+    if(c==='"'){inStr=!inStr;out+=c;i++;continue;}
+    if(inStr){out+=c;i++;continue;}
+    if(c==='{'){stack.push(new Set());out+=c;i++;continue;}
+    if(c==='}'){stack.pop();out+=c;i++;continue;}
+    if(c==='['||c===']'){out+=c;i++;continue;}
+    if(stack.length>0&&c==='"'){
+      let j=i+1;while(j<n&&!(text[j]==='"'&&text[j-1]!=='\\'))j++;
+      const key=text.slice(i+1,j);let k=j+1;
+      while(k<n&&text[k]!==':'&&text[k]!=='}'&&text[k]!==',')k++;
+      if(text[k]===':'){
+        const seen=stack[stack.length-1];
+        if(seen.has(key)){
+          k++;while(k<n&&' \n\r\t'.includes(text[k]))k++;
+          k=skipVal(text,k,n);while(k<n&&' \n\r\t'.includes(text[k]))k++;
+          if(text[k]===',')k++;out=out.replace(/,\s*$/,'');i=k;continue;
+        }
+        seen.add(key);
+      }
+      out+=c;i++;continue;
+    }
+    out+=c;i++;
+  }
+  return out;
+}
+function skipVal(s,i,n){
+  while(i<n&&' \n\r\t'.includes(s[i]))i++;
+  if(i>=n)return i;const c=s[i];
+  if(c==='"'){i++;while(i<n){if(s[i]==='\\'){i+=2;continue;}if(s[i]==='"'){i++;break;}i++;}return i;}
+  if(c==='{'||c==='['){const cl=c==='{'?'}':']';let d=1;i++;let inS=false;
+    while(i<n&&d>0){if(s[i]==='\\' && inS){i+=2;continue;}if(s[i]==='"'){inS=!inS;i++;continue;}
+      if(!inS){if(s[i]===c)d++;else if(s[i]===cl)d--;}i++;}return i;}
+  while(i<n&&s[i]!==','&&s[i]!=='}'&&s[i]!==']')i++;return i;
+}
+function safeParse(text){
+  let t=text;const s=t.indexOf('{');if(s>0)t=t.slice(s);
+  const e=t.lastIndexOf('}');if(e>=0&&e<t.length-1)t=t.slice(0,e+1);
+  try{return JSON.parse(t);}catch(e){}
+  try{return JSON.parse(removeDupKeys(t));}catch(e){throw new Error(e.message);}
+}
+function getName(obj){
+  if(!obj)return null;
+  const f=((obj.firstName||'')+' '+(obj.lastName||'')).trim();
+  return f||obj.shortName||null;
+}
+
+function parseFile(buf,filename,seasonId,champId){
+  let text,data;
+  try{text=decodeBuffer(buf);}catch(e){return{ok:false,err:'Decode: '+e.message};}
+  try{data=safeParse(text);}catch(e){return{ok:false,err:'Parse: '+e.message};}
+  const lines=data.sessionResult?.leaderBoardLines;
+  if(!lines||!Array.isArray(lines)||!lines.length)return{ok:false,err:'No leaderBoardLines found'};
+  const sessionType=(data.sessionType||'').toString().toUpperCase();
+  const race={id:uid(),filename,
+    track:data.trackName||data.metaData||filename.replace(/\.json$/i,''),
+    serverName:data.serverName||'',date:data.dateString||data.date||'',
+    sessionType,seasonId,champId,
+    results:[],fastestLap:null,fastestDriver:null,classFL:{}
+  };
+
+  // Per-class fastest
+  const classFlMap={};
+  const sessionBest=data.sessionResult.bestlap||Infinity;
+
+  lines.forEach((line,idx)=>{
+    const dObj=line.currentDriver||(line.car?.drivers||[])[0]||null;
+    const name=getName(dObj)||`Driver ${idx+1}`;
+    const raceNumber=line.car?.raceNumber||'';
+    const carModelNum=line.car?.carModel;
+    const cupCategory=line.car?.cupCategory??0;
+    const carInfo=getCarInfo(carModelNum);
+    const timing=line.timing||{};
+    const bestLap=timing.bestLap??timing.bestLapTime??0;
+    const lapCount=timing.lapCount??0;
+    const totalTime=timing.totalTime??0;
+    const dnf=line.missingMandatoryPitstop===true||line.missingMandatoryPitstop===1||(sessionType==='R'&&lapCount===0);
+    const pos=idx+1;
+    const gridPos=line.car?.gridPosition!=null?line.car.gridPosition+1:pos;
+    if(bestLap>0&&(!classFlMap[carInfo.class]||bestLap<classFlMap[carInfo.class].lap))
+      classFlMap[carInfo.class]={driver:name,lap:bestLap};
+    race.results.push({name,pos,gridPos,bestLap,lapCount,totalTime,dnf,raceNumber,
+      carModel:carModelNum,carName:carInfo.name,carClass:carInfo.class,
+      cupCategory,points:0,dsq:false,penaltyMs:0,effectivePos:pos,hasFl:false});
+  });
+
+  // Assign points per class (not overall position)
+  const classFlDrivers={};
+  Object.entries(classFlMap).forEach(([cls,fl])=>classFlDrivers[cls]=fl.driver);
+
+  // Group by class, sort by pos, assign class-based points
+  const classBuckets={};
+  race.results.forEach(r=>{
+    if(!classBuckets[r.carClass])classBuckets[r.carClass]=[];
+    classBuckets[r.carClass].push(r);
+  });
+  Object.entries(classBuckets).forEach(([cls,arr])=>{
+    arr.sort((a,b)=>a.pos-b.pos);
+    arr.forEach((r,i)=>{
+      if(sessionType==='R'&&!r.dsq){
+        let pts=POINTS[i]||0;
+        if(classFlDrivers[cls]===r.name)pts+=FL_BONUS;
+        r.points=pts;
+        r.hasFl=(classFlDrivers[cls]===r.name);
+      }
+      r.effectivePos=r.pos;
+    });
+  });
+
+  race.fastestLap=Object.values(classFlMap).reduce((best,fl)=>fl.lap<best?fl.lap:best,sessionBest<Infinity?sessionBest:Infinity);
+  race.fastestLap=race.fastestLap===Infinity?null:race.fastestLap;
+  race.classFL=classFlDrivers;
+  return{ok:true,race};
+}
+
+// ── PENALTY RECALCULATION ────────────────────────────────
+function recalcRacePoints(race){
+  // Re-sort non-DSQ by class, recalc effectivePos and points
+  const classFlMap={};
+  race.results.forEach(r=>{
+    if(r.dsq)return;
+    if(r.bestLap>0&&(!classFlMap[r.carClass]||r.bestLap<classFlMap[r.carClass].lap))
+      classFlMap[r.carClass]={driver:r.name,lap:r.bestLap};
+  });
+  const classFlDrivers={};
+  Object.entries(classFlMap).forEach(([cls,fl])=>classFlDrivers[cls]=fl.driver);
+
+  const classBuckets={};
+  race.results.forEach(r=>{
+    if(!classBuckets[r.carClass])classBuckets[r.carClass]=[];
+    classBuckets[r.carClass].push(r);
+  });
+  Object.entries(classBuckets).forEach(([cls,arr])=>{
+    const nonDsq=arr.filter(r=>!r.dsq).sort((a,b)=>{
+      const at=(a.totalTime||0)+(a.penaltyMs||0);
+      const bt=(b.totalTime||0)+(b.penaltyMs||0);
+      if(at>0&&bt>0)return at-bt;
+      return a.pos-b.pos;
+    });
+    nonDsq.forEach((r,i)=>{
+      r.effectivePos=i+1;
+      if(race.sessionType==='R'){
+        let pts=POINTS[i]||0;
+        if(classFlDrivers[cls]===r.name)pts+=FL_BONUS;
+        r.points=pts;r.hasFl=(classFlDrivers[cls]===r.name);
+      }
+    });
+    arr.filter(r=>r.dsq).forEach(r=>{r.effectivePos=999;r.points=0;r.hasFl=false;});
+  });
+  race.classFL=classFlDrivers;
+}
+
+// ── RENDER SELECTORS ──────────────────────────────────────
+function rebuildSelectors(){
+  const sf=document.getElementById('seasonFilter'),cf=document.getElementById('champFilter');
+  const us=document.getElementById('uploadSeason'),uc=document.getElementById('uploadChamp');
+  const sc=document.getElementById('splitChamp');
+  const sv=sf.value,cv=cf.value;
+  sf.innerHTML='<option value="all">All seasons</option>';
+  store.seasons.forEach(s=>sf.innerHTML+=`<option value="${s.id}">${s.name}</option>`);
+  if(sv&&sv!=='all')sf.value=sv;
+  cf.innerHTML='<option value="all">All championships</option>';
+  store.championships.forEach(c=>cf.innerHTML+=`<option value="${c.id}">${c.name}</option>`);
+  if(cv&&cv!=='all')cf.value=cv;
+  us.innerHTML='<option value="">Select season…</option>';
+  store.seasons.forEach(s=>us.innerHTML+=`<option value="${s.id}">${s.name}</option>`);
+  uc.innerHTML='<option value="">Select championship…</option>';
+  store.championships.forEach(c=>uc.innerHTML+=`<option value="${c.id}">${c.name}</option>`);
+  sc.innerHTML='<option value="">Select championship…</option>';
+  store.championships.forEach(c=>sc.innerHTML+=`<option value="${c.id}">${c.name}</option>`);
+}
+
+function renderSeasonChampList(){
+  const el=document.getElementById('seasonChampList');
+  if(!store.seasons.length&&!store.championships.length){el.innerHTML='<div style="color:var(--dim);font-size:13px;">None yet.</div>';return;}
+  let h='<div style="display:flex;gap:24px;flex-wrap:wrap;">';
+  h+='<div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;font-family:\'Barlow Condensed\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Seasons</div>';
+  store.seasons.forEach(s=>h+=`<div class="race-list-item"><span>${s.name}</span><span class="del-btn" data-del-season="${s.id}">remove</span></div>`);
+  if(!store.seasons.length)h+='<div style="color:var(--dim);font-size:12px;">None</div>';
+  h+='</div><div><div style="font-size:11px;color:var(--dim);margin-bottom:6px;font-family:\'Barlow Condensed\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Championships</div>';
+  store.championships.forEach(c=>h+=`<div class="race-list-item"><span>${c.name}</span><span class="del-btn" data-del-champ="${c.id}">remove</span></div>`);
+  if(!store.championships.length)h+='<div style="color:var(--dim);font-size:12px;">None</div>';
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+function renderSplitsList(){
+  const el=document.getElementById('splitsList');
+  let h='';
+  store.championships.forEach(c=>{
+    if(!c.classSplits||!c.classSplits.length)return;
+    h+=`<div style="margin-bottom:8px;"><span style="font-size:12px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;">${c.name}</span>`;
+    c.classSplits.forEach(sp=>{
+      h+=`<div class="race-list-item" style="padding:4px 0;">
+        <span style="color:var(--text)">${sp.name} <span style="color:var(--dim)">— category ${sp.category}</span></span>
+        <span class="del-btn" data-del-split="${sp.id}" data-split-champ="${c.id}">remove</span>
+      </div>`;
+    });
+    h+='</div>';
+  });
+  el.innerHTML=h||'<div style="color:var(--dim);font-size:12px;">No splits defined.</div>';
+}
+
+function renderAdminRaceList(){
+  const el=document.getElementById('adminRaceList');
+  if(!store.races.length){el.innerHTML='<div style="color:var(--dim);font-size:13px;">No races loaded.</div>';return;}
+  let h='';
+  store.races.slice().reverse().forEach(r=>{
+    h+=`<div class="race-list-item">
+      <span>${cap(r.track)} <span style="color:var(--dim)">(${r.sessionType})</span></span>
+      <span style="color:var(--dim);font-size:12px;">${seasonName(r.seasonId)} / ${champName(r.champId)}</span>
+      <span class="del-btn" data-del-race="${r.id}">remove</span>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+// ── RENDER STANDINGS ──────────────────────────────────────
+function renderStandings(){
+  const clv=document.getElementById('classFilter').value;
+  const cv=document.getElementById('champFilter').value;
+  const races=filteredRaces().filter(r=>r.sessionType==='R');
+  const el=document.getElementById('standingsContent');
+  if(!races.length){el.innerHTML='<div class="empty">No race results for this filter.</div>';return;}
+
+  // If a specific championship is selected, use split-aware grouping
+  const useChampId=cv!=='all'?cv:null;
+  const driversMap=buildDriversGrouped(races,useChampId);
+
+  // Group drivers by their "group" field
+  const byGroup={};
+  Object.values(driversMap).forEach(d=>{
+    if(!byGroup[d.group])byGroup[d.group]=[];
+    byGroup[d.group].push(d);
+  });
+
+  // Determine group order — use splits order if champ selected, else CLASS_ORDER
+  let groupOrder=[];
+  if(useChampId){
+    const champ=store.championships.find(c=>c.id===useChampId);
+    if(champ&&champ.classSplits&&champ.classSplits.length){
+      groupOrder=champ.classSplits.map(s=>s.name);
+    }
+  }
+  // Append any groups not in the defined order
+  const knownGroups=new Set(groupOrder);
+  const extraGroups=CLASS_ORDER.filter(c=>byGroup[c]&&!knownGroups.has(c))
+    .concat(Object.keys(byGroup).filter(g=>!knownGroups.has(g)&&!CLASS_ORDER.includes(g)));
+  groupOrder=[...groupOrder,...extraGroups];
+
+  // Filter to selected class if needed
+  const filteredGroups=clv==='all'?groupOrder:groupOrder.filter(g=>{
+    const drivers=byGroup[g]||[];
+    return drivers.some(d=>d.carClass===clv||d.group===clv);
+  });
+
+  const sv=document.getElementById('seasonFilter').value;
+  const sLabel=sv==='all'?'All Seasons':seasonName(sv);
+  const cLabel=cv==='all'?'All Championships':champName(cv);
+  const totalRaces=races.length;
+  const totalDrivers=Object.values(byGroup).flat().length;
+
+  let h=`<div class="metrics">
+    <div class="metric"><div class="label">Drivers</div><div class="value">${totalDrivers}</div></div>
+    <div class="metric"><div class="label">Races</div><div class="value">${totalRaces}</div></div>
+    <div class="metric"><div class="label">Season</div><div class="value" style="font-size:16px;margin-top:4px">${sLabel}</div></div>
+    <div class="metric"><div class="label">Championship</div><div class="value" style="font-size:14px;margin-top:4px">${cLabel}</div></div>
+  </div>`;
+
+  filteredGroups.forEach(group=>{
+    const groupDrivers=(byGroup[group]||[]).sort((a,b)=>b.points-a.points);
+    if(!groupDrivers.length)return;
+    const max=groupDrivers[0].points||1;
+    const groupColor=CLASS_COLORS[group]?.color||CLASS_COLORS[groupDrivers[0]?.carClass]?.color||'var(--accent)';
+
+    h+=`<div class="class-section">
+      <div class="class-section-header">
+        ${classBadge(groupDrivers[0]?.carClass||group)}
+        <span class="class-section-title" style="color:${groupColor}">${group}</span>
+        <span style="font-size:12px;color:var(--dim)">${groupDrivers.length} drivers</span>
+      </div>
+      <div class="table-wrap"><div class="tbl-scroll"><table>
+      <thead><tr><th>Pos</th><th>Driver</th><th>Car</th><th>Pts</th><th>W</th><th>Pd</th><th>Poles</th><th>FL</th><th>Pos +/−</th><th style="min-width:140px">Gap</th></tr></thead><tbody>`;
+
+    groupDrivers.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const gap=i===0?'—':`-${groupDrivers[0].points-d.points}`;
+      const bar=Math.round((d.points/max)*100);
+      const pg=d.positionsGained;
+      const pgStr=pg>0?`<span class="pos-gain">+${pg}</span>`:pg<0?`<span class="pos-lose">${pg}</span>`:`<span class="pos-same">—</span>`;
+      h+=`<tr>
+        <td><span class="spos ${cls}">${i+1}</span></td>
+        <td><span class="driver-name">${d.name}</span></td>
+        <td style="color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis">${d.carName||'—'}</td>
+        <td style="font-weight:500;font-size:15px">${d.points}</td>
+        <td>${d.wins}</td><td>${d.podiums}</td><td>${d.poles}</td><td>${d.fastestLaps}</td><td>${pgStr}</td>
+        <td><div class="bar-cell"><span class="gap-txt">${gap}</span><div class="bar-track"><div class="bar-fill" style="width:${bar}%;background:${groupColor}"></div></div></div></td>
+      </tr>`;
+    });
+    h+='</tbody></table></div></div></div>';
+  });
+
+  if(!filteredGroups.length)h+='<div class="empty">No data for this class filter.</div>';
+  el.innerHTML=h;
+}
+
+// ── RENDER DRIVERS ────────────────────────────────────────
+function renderDrivers(filter=''){
+  const clv=document.getElementById('classFilter').value;
+  const races=filteredRaces();
+  const el=document.getElementById('driversContent');
+  if(!races.length){el.innerHTML='<div class="empty">No data for this filter.</div>';return;}
+  const drivers=buildDriversFlat(races);
+  let sorted=Object.values(drivers).sort((a,b)=>b.points-a.points);
+  if(clv!=='all')sorted=sorted.filter(d=>d.carClass===clv);
+  sorted=sorted.filter(d=>!filter||d.name.toLowerCase().includes(filter.toLowerCase()));
+  if(!sorted.length){el.innerHTML='<div class="empty">No drivers found.</div>';return;}
+  let h=`<div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">Driver statistics</span>
+      <input class="search-input" id="driverSearch" placeholder="Search driver…" value="${filter}">
+    </div>
+    <div class="tbl-scroll"><table>
+    <thead><tr><th>#</th><th>Driver</th><th>Class</th><th>Car</th><th>Races</th><th>Wins</th><th>Class W</th><th>Podiums</th><th>Poles</th><th>FL</th><th>Avg pos.</th><th>Pos +/−</th><th>Best lap</th></tr></thead><tbody>`;
+  sorted.forEach((d,i)=>{
+    const pg=d.positionsGained;
+    const pgStr=pg>0?`<span class="pos-gain">+${pg}</span>`:pg<0?`<span class="pos-lose">${pg}</span>`:`<span class="pos-same">—</span>`;
+    const bl=d.bestLap===Infinity?'—':`<span class="mono">${msToTime(d.bestLap)}</span>`;
+    const totalCW=Object.values(d.classWins||{}).reduce((a,b)=>a+b,0);
+    const cwDetail=Object.entries(d.classWins||{}).map(([c,n])=>`${c}:${n}`).join(' ');
+    h+=`<tr>
+      <td style="color:var(--dim);font-size:12px">${i+1}</td>
+      <td><span class="driver-name">${d.name}</span></td>
+      <td>${classBadge(d.carClass||'GT3')}</td>
+      <td style="color:var(--muted);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis">${d.carName||'—'}</td>
+      <td>${d.races}</td><td>${d.wins}</td><td title="${cwDetail}">${totalCW}</td>
+      <td>${d.podiums}</td><td>${d.poles}</td><td>${d.fastestLaps}</td>
+      <td>${(d.positions.length?d.positions.reduce((a,b)=>a+b,0)/d.positions.length:0).toFixed(1)}</td>
+      <td>${pgStr}</td><td>${bl}</td>
+    </tr>`;
+  });
+  h+='</tbody></table></div></div>';
+  el.innerHTML=h;
+  const si=document.getElementById('driverSearch');
+  if(si)si.addEventListener('input',e=>renderDrivers(e.target.value));
+}
+
+// ── RENDER RACES ──────────────────────────────────────────
+function renderRaces(){
+  const races=filteredRaces();
+  const el=document.getElementById('racesContent');
+  if(!races.length){el.innerHTML='<div class="empty">No races for this filter.</div>';return;}
+  let h='';
+  races.slice().reverse().forEach(race=>{
+    const tl=cap(race.track);
+    const typeB=race.sessionType==='Q'?'<span class="badge b-q">Qualifying</span>':'<span class="badge b-r">Race</span>';
+    const sn=seasonName(race.seasonId),cn=champName(race.champId);
+    const classFlInfo=race.classFL?Object.entries(race.classFL).map(([cls,drv])=>{
+      const res=race.results.find(r=>r.name===drv&&r.carClass===cls);
+      return res?`${classBadge(cls)} ${drv} ${msToTime(res.bestLap)}`:'';
+    }).filter(Boolean).join(' &nbsp; '):'';
+    const editBtn=adminUnlocked?`<button class="btn" style="font-size:11px;padding:4px 10px;" onclick="openPenaltyPanel('${race.id}')">Edit results</button>`:'';
+    const dlBtn=`<button class="btn" style="font-size:11px;padding:4px 10px;border-color:rgba(232,255,71,0.3);color:var(--accent);" onclick="generateGraphic('${race.id}')">&#8595; Graphic</button>`;
+    h+=`<div class="race-card" id="race-${race.id}">
+      <div class="race-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px"><span class="race-title">${tl}</span>${typeB}</div>
+          <div class="race-meta">${sn} — ${cn}${race.serverName?' · '+race.serverName:''} · ${race.results.length} drivers</div>
+          ${classFlInfo?`<div style="margin-top:4px;font-size:11px;color:var(--dim)">FL: ${classFlInfo}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">${editBtn}${dlBtn}</div>
+      </div>
+      <div class="tbl-scroll"><table>
+      <thead><tr><th>Pos</th><th>Cls Pos</th><th>#</th><th>Driver</th><th>Class</th><th>Car</th><th>Grid</th><th>+/−</th><th>Best lap</th><th>Laps</th><th>Pts</th><th></th></tr></thead><tbody>`;
+
+    // Sort overall by effectivePos
+    const sorted=[...race.results].sort((a,b)=>{
+      if(a.dsq&&!b.dsq)return 1;if(!a.dsq&&b.dsq)return -1;
+      return (a.effectivePos||a.pos)-(b.effectivePos||b.pos);
+    });
+    // Compute class positions for display
+    const clsPos={};
+    sorted.forEach(r=>{
+      if(r.dsq)return;
+      const cls=r.carClass||'GT3';
+      clsPos[cls]=(clsPos[cls]||0)+1;
+      r._clsPos=clsPos[cls];
+    });
+
+    sorted.forEach(r=>{
+      const epos=r.dsq?'—':(r.effectivePos||r.pos);
+      const diff=r.dsq?0:((r.gridPos||r.pos)-(r.effectivePos||r.pos));
+      const ds=diff>0?`<span class="pos-gain">+${diff}</span>`:diff<0?`<span class="pos-lose">${diff}</span>`:`<span class="pos-same">—</span>`;
+      const pb=!r.dsq&&epos===1?'b-p1':!r.dsq&&epos===2?'b-p2':!r.dsq&&epos===3?'b-p3':'';
+      const fl=r.hasFl&&!r.dsq?'<span class="badge b-fl">FL</span>':'';
+      const dnf=r.dnf?'<span class="badge b-dnf">DNF</span>':'';
+      const dsqB=r.dsq?'<span class="badge b-dsq">DSQ</span>':'';
+      const penB=r.penaltyMs>0?`<span class="badge b-pen">+${(r.penaltyMs/1000).toFixed(0)}s</span>`:'';
+      const clsPosStr=r.dsq?'—':(r._clsPos||epos);
+      const clsPb=!r.dsq&&clsPosStr===1?'b-p1':!r.dsq&&clsPosStr===2?'b-p2':!r.dsq&&clsPosStr===3?'b-p3':'';
+      h+=`<tr style="${r.dsq?'opacity:0.45;':''}">
+        <td><span class="badge ${pb}">${r.dsq?'DSQ':epos}</span></td>
+        <td><span class="badge ${clsPb}">${clsPosStr}</span></td>
+        <td style="color:var(--dim)">${r.raceNumber}</td>
+        <td><span class="driver-name">${r.name}</span></td>
+        <td>${classBadge(r.carClass||'GT3')}</td>
+        <td style="color:var(--muted);font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${r.carName||'—'}</td>
+        <td style="color:var(--muted)">${r.gridPos}</td>
+        <td>${r.dsq?'—':ds}</td>
+        <td class="mono">${msToTime(r.bestLap)}</td>
+        <td style="color:var(--muted)">${r.lapCount}</td>
+        <td style="font-weight:500">${r.dsq?'0':r.points||''}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">${dnf}${dsqB}${penB}${fl}</td>
+      </tr>`;
+    });
+    h+='</tbody></table></div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── RENDER LAPS ───────────────────────────────────────────
+function renderLaps(){
+  const races=filteredRaces();
+  const el=document.getElementById('lapsContent');
+  if(!races.length){el.innerHTML='<div class="empty">No data for this filter.</div>';return;}
+  const drivers=buildDriversFlat(races);
+  const byClass={};
+  Object.values(drivers).filter(d=>d.bestLap<Infinity).forEach(d=>{
+    const cls=d.carClass||'GT3';
+    if(!byClass[cls])byClass[cls]=[];
+    byClass[cls].push(d);
+  });
+  const classes=CLASS_ORDER.filter(c=>byClass[c]).concat(Object.keys(byClass).filter(c=>!CLASS_ORDER.includes(c)));
+  if(!classes.length){el.innerHTML='<div class="empty">No lap time data found.</div>';return;}
+  let h='';
+  classes.forEach(cls=>{
+    const arr=byClass[cls].sort((a,b)=>a.bestLap-b.bestLap);
+    const fastest=arr[0].bestLap;
+    h+=`<div class="table-wrap" style="margin-bottom:1.5rem">
+      <div class="table-header"><span class="table-title">Best lap times — ${cls}</span></div>
+      <div class="tbl-scroll"><table>
+      <thead><tr><th>#</th><th>Driver</th><th>Car</th><th>Best lap</th><th>Gap</th><th style="min-width:80px"></th></tr></thead><tbody>`;
+    arr.forEach((d,i)=>{
+      const gap=d.bestLap-fastest;
+      const gs=gap===0?'<span class="badge b-fl">Fastest</span>':`<span class="mono" style="color:var(--muted)">+${(gap/1000).toFixed(3)}s</span>`;
+      const bar=Math.max(2,Math.round((1-(gap/4000))*100));
+      h+=`<tr>
+        <td style="color:var(--dim);font-size:12px">${i+1}</td>
+        <td><span class="driver-name">${d.name}</span></td>
+        <td style="color:var(--muted);font-size:12px">${d.carName||'—'}</td>
+        <td class="mono">${msToTime(d.bestLap)}</td><td>${gs}</td>
+        <td><div class="bar-track"><div class="bar-fill" style="width:${bar}%;background:var(--green)"></div></div></td>
+      </tr>`;
+    });
+    h+='</tbody></table></div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── RENDER ALL-TIME ───────────────────────────────────────
+function renderAllTime(){
+  const el=document.getElementById('alltimeContent');
+  const allRaces=store.races;
+  if(!allRaces.length){el.innerHTML='<div class="empty">No data loaded.</div>';return;}
+  const allDrivers=buildDriversFlat(allRaces);
+  const sorted=Object.values(allDrivers).sort((a,b)=>b.points-a.points);
+
+  // Championship titles — per season+champ+group
+  const titleMap={};
+  const combos=new Set();
+  allRaces.filter(r=>r.sessionType==='R').forEach(r=>combos.add(r.seasonId+'|'+r.champId));
+  combos.forEach(combo=>{
+    const [sId,cId]=combo.split('|');
+    const races=allRaces.filter(r=>r.seasonId===sId&&r.champId===cId&&r.sessionType==='R');
+    if(!races.length)return;
+    const grouped=buildDriversGrouped(races,cId);
+    const byGroup={};
+    Object.values(grouped).forEach(d=>{
+      if(!byGroup[d.group])byGroup[d.group]=[];
+      byGroup[d.group].push(d);
+    });
+    Object.entries(byGroup).forEach(([group,arr])=>{
+      const winner=arr.sort((a,b)=>b.points-a.points)[0];
+      if(winner)titleMap[winner.name]=(titleMap[winner.name]||0)+1;
+    });
+  });
+
+  function topList(arr,key,label,color){
+    const top=arr.slice().sort((a,b)=>b[key]-a[key]).slice(0,10);
+    let h=`<div class="hall-card"><div class="hall-card-title">${label}</div>`;
+    top.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      h+=`<div class="hall-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="spos ${cls}" style="min-width:20px">${i+1}</span>
+          <span class="driver-name">${d.name}</span>
+          ${d.carClass?classBadge(d.carClass):''}
+        </div>
+        <span class="hall-num" style="color:${color}">${d[key]}</span>
+      </div>`;
+    });
+    return h+'</div>';
+  }
+
+  // Titles card
+  const titlesArr=Object.entries(titleMap).map(([name,titles])=>({name,titles})).sort((a,b)=>b.titles-a.titles).slice(0,10);
+  let titlesH=`<div class="hall-card"><div class="hall-card-title">Championship titles</div>`;
+  if(!titlesArr.length)titlesH+='<div style="padding:12px 16px;color:var(--dim);font-size:13px;">No completed championships yet.</div>';
+  else titlesArr.forEach((d,i)=>{
+    const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+    const dInfo=allDrivers[d.name];
+    titlesH+=`<div class="hall-row">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="spos ${cls}" style="min-width:20px">${i+1}</span>
+        <span class="driver-name">${d.name}</span>
+        ${dInfo?.carClass?classBadge(dInfo.carClass):''}
+      </div>
+      <span class="hall-num" style="color:var(--gold)">${d.titles} <span style="font-size:14px;color:var(--dim)">title${d.titles!==1?'s':''}</span></span>
+    </div>`;
+  });
+  titlesH+='</div>';
+
+  // Class wins card
+  function classWinsList(arr){
+    const top=arr.filter(d=>Object.values(d.classWins||{}).reduce((a,b)=>a+b,0)>0)
+      .sort((a,b)=>Object.values(b.classWins||{}).reduce((x,y)=>x+y,0)-Object.values(a.classWins||{}).reduce((x,y)=>x+y,0)).slice(0,10);
+    let h=`<div class="hall-card"><div class="hall-card-title">All-time class wins</div>`;
+    if(!top.length)return h+'<div style="padding:12px 16px;color:var(--dim);font-size:13px;">No data.</div></div>';
+    top.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const total=Object.values(d.classWins||{}).reduce((a,b)=>a+b,0);
+      const detail=Object.entries(d.classWins||{}).map(([c,n])=>`${classBadge(c)} ${n}`).join(' ');
+      h+=`<div class="hall-row">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="spos ${cls}" style="min-width:20px">${i+1}</span>
+          <span class="driver-name">${d.name}</span>
+          <span style="font-size:11px">${detail}</span>
+        </div>
+        <span class="hall-num" style="color:var(--gold)">${total}</span>
+      </div>`;
+    });
+    return h+'</div>';
+  }
+
+  // Positions gained card
+  function posGainList(arr){
+    const top=arr.slice().sort((a,b)=>b.positionsGained-a.positionsGained).slice(0,10);
+    let h=`<div class="hall-card"><div class="hall-card-title">Most positions gained</div>`;
+    top.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const pg=d.positionsGained;
+      h+=`<div class="hall-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="spos ${cls}" style="min-width:20px">${i+1}</span>
+          <span class="driver-name">${d.name}</span>
+          ${d.carClass?classBadge(d.carClass):''}
+        </div>
+        <span class="hall-num" style="color:var(--green)">${pg>0?'+':''}${pg}</span>
+      </div>`;
+    });
+    return h+'</div>';
+  }
+
+  // Season champions summary
+  const seasonIds=[...new Set(allRaces.map(r=>r.seasonId))];
+  let seasonH='<div style="margin-top:2rem"><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Season champions</div><div class="season-list">';
+  seasonIds.forEach(sId=>{
+    const sRaces=allRaces.filter(r=>r.seasonId===sId&&r.sessionType==='R');
+    const champIds=[...new Set(sRaces.map(r=>r.champId))];
+    if(!sRaces.length)return;
+    let champRows='';
+    champIds.forEach(cId=>{
+      const cRaces=sRaces.filter(r=>r.champId===cId);
+      const grouped=buildDriversGrouped(cRaces,cId);
+      const byGroup={};
+      Object.values(grouped).forEach(d=>{if(!byGroup[d.group])byGroup[d.group]=[];byGroup[d.group].push(d);});
+      Object.entries(byGroup).forEach(([group,arr])=>{
+        const winner=arr.sort((a,b)=>b.points-a.points)[0];
+        if(!winner)return;
+        champRows+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--dim);min-width:130px">${champName(cId)}</span>
+          ${classBadge(winner.carClass||group)}
+          <span style="font-size:12px;color:var(--dim)">${group}</span>
+          <span class="badge b-champ">${winner.name}</span>
+          <span style="font-size:12px;color:var(--dim)">${winner.points} pts</span>
+        </div>`;
+      });
+    });
+    seasonH+=`<div class="season-card">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">${seasonName(sId)}</div>
+        <div style="margin-top:6px">${champRows||'<span style="color:var(--dim);font-size:12px">No results</span>'}</div>
+      </div>
+      <div style="display:flex;gap:20px;">
+        <div class="season-stat"><div class="s-val">${sRaces.length}</div><div class="s-lbl">Races</div></div>
+        <div class="season-stat"><div class="s-val">${[...new Set(sRaces.flatMap(r=>r.results.map(x=>x.name)))].length}</div><div class="s-lbl">Drivers</div></div>
+      </div>
+    </div>`;
+  });
+
+  function winsList(arr){
+    const top=arr.slice().sort((a,b)=>b.wins-a.wins).slice(0,10);
+    let h='<div class="hall-card"><div class="hall-card-title">All-time wins</div>';
+    top.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const detail=Object.entries(d.winsByClass||{}).filter(([,n])=>n>0).map(([c,n])=>classBadge(c)+' '+n).join(' ');
+      h+=`<div class="hall-row"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="spos ${cls}" style="min-width:20px">${i+1}</span><span class="driver-name">${d.name}</span><span style="font-size:11px">${detail}</span></div><span class="hall-num" style="color:var(--gold)">${d.wins}</span></div>`;
+    });
+    return h+'</div>';
+  }
+  function polesList(arr){
+    const top=arr.slice().sort((a,b)=>b.poles-a.poles).slice(0,10);
+    let h='<div class="hall-card"><div class="hall-card-title">All-time poles</div>';
+    top.forEach((d,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const detail=Object.entries(d.polesByClass||{}).filter(([,n])=>n>0).map(([c,n])=>classBadge(c)+' '+n).join(' ');
+      h+=`<div class="hall-row"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="spos ${cls}" style="min-width:20px">${i+1}</span><span class="driver-name">${d.name}</span><span style="font-size:11px">${detail}</span></div><span class="hall-num" style="color:var(--accent)">${d.poles}</span></div>`;
+    });
+    return h+'</div>';
+  }
+  seasonH+='</div></div>';
+
+  let h=`<div class="metrics">
+    <div class="metric"><div class="label">Total races</div><div class="value">${allRaces.filter(r=>r.sessionType==='R').length}</div></div>
+    <div class="metric"><div class="label">Seasons</div><div class="value">${store.seasons.length}</div></div>
+    <div class="metric"><div class="label">Championships</div><div class="value">${store.championships.length}</div></div>
+    <div class="metric"><div class="label">Unique drivers</div><div class="value">${sorted.length}</div></div>
+  </div>
+  <div class="hall-grid">
+    ${titlesH}
+    ${topList(sorted,'points','All-time points','var(--accent)')}
+    ${winsList(sorted)}
+    ${topList(sorted,'podiums','All-time podiums','var(--silver)')}
+    ${classWinsList(sorted)}
+    ${polesList(sorted)}
+    ${topList(sorted,'fastestLaps','All-time fastest laps','var(--green)')}
+    ${posGainList(sorted)}
+  </div>
+  ${seasonH}`;
+  el.innerHTML=h;
+}
+
+// ── RENDER TRACK RECORDS ──────────────────────────────────
+function renderRecords(){
+  const el=document.getElementById('recordsContent');
+  const allRaces=store.races;
+  if(!allRaces.length){el.innerHTML='<div class="empty">No data loaded.</div>';return;}
+  const trackRecords={};
+  allRaces.forEach(race=>{
+    race.results.forEach(r=>{
+      if(r.dsq||!r.bestLap||r.bestLap<=0)return;
+      const cls=r.carClass||'GT3';
+      if(!trackRecords[race.track])trackRecords[race.track]={};
+      const cur=trackRecords[race.track][cls];
+      if(!cur||r.bestLap<cur.lap)
+        trackRecords[race.track][cls]={lap:r.bestLap,driver:r.name,carName:r.carName||'',
+          carClass:cls,seasonId:race.seasonId,champId:race.champId,date:race.date};
+    });
+  });
+  const tracks=Object.keys(trackRecords).sort();
+  if(!tracks.length){el.innerHTML='<div class="empty">No lap data found.</div>';return;}
+  const clvFilter=document.getElementById('classFilter').value;
+  const totalRecords=tracks.reduce((s,t)=>s+Object.keys(trackRecords[t]).length,0);
+  let h=`<div class="metrics">
+    <div class="metric"><div class="label">Tracks</div><div class="value">${tracks.length}</div></div>
+    <div class="metric"><div class="label">Class records</div><div class="value">${totalRecords}</div></div>
+  </div>`;
+  tracks.forEach(track=>{
+    const rec=trackRecords[track];
+    const classes=CLASS_ORDER.filter(c=>rec[c]&&(clvFilter==='all'||c===clvFilter))
+      .concat(Object.keys(rec).filter(c=>!CLASS_ORDER.includes(c)&&(clvFilter==='all'||c===clvFilter)));
+    if(!classes.length)return;
+    h+=`<div class="table-wrap" style="margin-bottom:1.5rem">
+      <div class="table-header"><span class="table-title" style="font-size:14px;font-weight:600">${cap(track)}</span></div>
+      <div class="tbl-scroll"><table>
+      <thead><tr><th>Class</th><th>Driver</th><th>Car</th><th>Lap time</th><th>Season</th><th>Championship</th><th>Date</th></tr></thead><tbody>`;
+    classes.forEach(cls=>{
+      const r=rec[cls];
+      h+=`<tr>
+        <td>${classBadge(cls)}</td>
+        <td><span class="driver-name">${r.driver}</span></td>
+        <td style="color:var(--muted);font-size:12px">${r.carName||'—'}</td>
+        <td><span class="mono" style="color:var(--accent);font-size:14px">${msToTime(r.lap)}</span></td>
+        <td style="color:var(--muted);font-size:12px">${seasonName(r.seasonId)}</td>
+        <td style="color:var(--muted);font-size:12px">${champName(r.champId)}</td>
+        <td style="color:var(--dim);font-size:12px">${r.date||'—'}</td>
+      </tr>`;
+    });
+    h+='</tbody></table></div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── PENALTY PANEL ─────────────────────────────────────────
+let penaltyRaceId=null;
+function openPenaltyPanel(raceId){
+  penaltyRaceId=raceId;
+  const race=store.races.find(r=>r.id===raceId);
+  if(!race)return;
+  let h=`<div style="font-weight:500;font-size:15px;margin-bottom:1rem">${cap(race.track)} — Penalties &amp; DSQ</div>`;
+  const pSorted=[...race.results].sort((a,b)=>(a.effectivePos||a.pos)-(b.effectivePos||b.pos));
+  h+=`<div class="tbl-scroll"><table style="min-width:560px"><thead><tr><th>Pos</th><th>Driver</th><th>Class</th><th>Penalty (s)</th><th>DNF</th><th>DSQ</th></tr></thead><tbody>`;
+  pSorted.forEach((r)=>{
+    const origIdx=race.results.indexOf(r);
+    const ep=r.dsq?'DSQ':(r.effectivePos||r.pos);
+    h+=`<tr>
+      <td style="color:var(--muted);font-size:12px">${ep}</td>
+      <td><span class="driver-name">${r.name}</span></td>
+      <td>${classBadge(r.carClass||'GT3')}</td>
+      <td><input type="number" min="0" step="1" value="${r.penaltyMs>0?r.penaltyMs/1000:''}" placeholder="0"
+        style="width:72px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);padding:4px 8px;font-size:13px;"
+        data-idx="${origIdx}" class="pen-input"></td>
+      <td><input type="checkbox" ${r.dnf?'checked':''} data-idx="${origIdx}" class="dnf-check"
+        style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;"></td>
+      <td><input type="checkbox" ${r.dsq?'checked':''} data-idx="${origIdx}" class="dsq-check"
+        style="width:16px;height:16px;accent-color:var(--red);cursor:pointer;"></td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>
+  <div style="display:flex;gap:8px;margin-top:1rem">
+    <button class="btn btn-accent" onclick="savePenalties()">Save &amp; recalculate</button>
+    <button class="btn" onclick="closePenaltyPanel()">Cancel</button>
+  </div>`;
+  document.getElementById('penaltyPanel').innerHTML=h;
+  document.getElementById('penaltyOverlay').classList.add('visible');
+}
+function closePenaltyPanel(){document.getElementById('penaltyOverlay').classList.remove('visible');penaltyRaceId=null;}
+function savePenalties(){
+  const race=store.races.find(r=>r.id===penaltyRaceId);
+  if(!race)return;
+  document.querySelectorAll('.pen-input').forEach(inp=>{
+    race.results[parseInt(inp.dataset.idx)].penaltyMs=(parseFloat(inp.value)||0)*1000;
+  });
+  document.querySelectorAll('.dnf-check').forEach(chk=>{
+    race.results[parseInt(chk.dataset.idx)].dnf=chk.checked;
+  });
+  document.querySelectorAll('.dsq-check').forEach(chk=>{
+    race.results[parseInt(chk.dataset.idx)].dsq=chk.checked;
+  });
+  recalcRacePoints(race);
+  save();closePenaltyPanel();refreshAll();
+}
+
+// ── GRAPHIC GENERATOR ────────────────────────────────────
+function generateGraphic(raceId){
+  const race=store.races.find(r=>r.id===raceId);
+  if(!race)return;
+
+  const W=1080,H=1350;
+  const BG='#0a0a0b',BG2='#111114',BG3='#18181c',ACCENT='#e8ff47';
+  const GOLD='#f5a623',SILVER='#a8b2c0',BRONZE='#cd7f32';
+  const TEXT='#f0f0f0',MUTED='#888888',DIM='#444444';
+  const GREEN='#2ecc71',RED='#e74c3c',ORANGE='#e67e22',BLUE='#5dade2';
+  const CC={GT3:'#e8ff47',GT4:'#5dade2',GT2:'#e74c3c',ST:'#a569bd',TCX:'#e67e22',CUP:'#2ecc71',CHL:'#f5a623'};
+  const PAD=52;
+  const ROWS_PER_PAGE=20;
+
+  const sorted=[...race.results].sort((a,b)=>{
+    if(a.dsq&&!b.dsq)return 1;if(!a.dsq&&b.dsq)return -1;
+    return (a.effectivePos||a.pos)-(b.effectivePos||b.pos);
+  });
+
+  // Compute class positions once
+  const clsPosCtr={};
+  sorted.forEach(r=>{
+    if(!r.dsq){const cl=r.carClass||'GT3';clsPosCtr[cl]=(clsPosCtr[cl]||0)+1;r._cp=clsPosCtr[cl];}
+  });
+
+  const totalPages=Math.ceil(sorted.length/ROWS_PER_PAGE)||1;
+
+  function hexA(hex,a){
+    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function drawPage(pageIndex){
+    const canvas=document.createElement('canvas');
+    canvas.width=W;canvas.height=H;
+    const ctx=canvas.getContext('2d');
+
+    function rr(x,y,w,h,rad,col){ctx.fillStyle=col;if(rad>0){ctx.beginPath();ctx.roundRect(x,y,w,h,rad);ctx.fill();}else ctx.fillRect(x,y,w,h);}
+    function ln(x1,y1,x2,y2,col,lw=1){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+    function t(str,x,y,font,col,align='left',base='alphabetic'){
+      if(str==null)return;ctx.font=font;ctx.fillStyle=col;ctx.textAlign=align;ctx.textBaseline=base;ctx.fillText(String(str),x,y);
+    }
+
+    // BG + grid lines
+    rr(0,0,W,H,0,BG);
+    ctx.strokeStyle='rgba(255,255,255,0.025)';ctx.lineWidth=1;
+    for(let i=0;i<W;i+=54){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+
+    // Top accent strip
+    rr(0,0,W,5,0,ACCENT);
+
+    // Header block
+    const HEADER_H=186;
+    rr(0,5,W,HEADER_H,0,BG2);
+    ln(0,5+HEADER_H,W,5+HEADER_H,'rgba(255,255,255,0.07)');
+
+    // League name
+    ctx.font='700 44px Barlow Condensed, sans-serif';
+    ctx.fillStyle=ACCENT;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    ctx.fillText('HCCL',PAD,72);
+    ctx.font='300 44px Barlow Condensed, sans-serif';ctx.fillStyle=TEXT;
+    ctx.fillText(' League Stats',PAD+ctx.measureText('HCCL').width,72);
+
+    // Track
+    t((race.track||'').toUpperCase(),PAD,146,'700 64px Barlow Condensed, sans-serif',TEXT);
+
+    // Session badge
+    const stC=race.sessionType==='Q'?BLUE:GREEN;
+    const stL=race.sessionType==='Q'?'QUALIFYING':'RACE';
+    ctx.font='700 17px Barlow Condensed, sans-serif';
+    const stW=ctx.measureText(stL).width+22;
+    const stX=W-PAD-stW;
+    rr(stX,16,stW,28,3,hexA(stC,0.15));
+    ctx.strokeStyle=hexA(stC,0.4);ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(stX,16,stW,28,3);ctx.stroke();
+    t(stL,stX+11,34,'700 17px Barlow Condensed, sans-serif',stC);
+
+    // Meta
+    const meta=[seasonName(race.seasonId),champName(race.champId)].filter(s=>s&&s!=='?').join('  ·  ');
+    t(meta,W-PAD,78,'300 21px Barlow Condensed, sans-serif',MUTED,'right');
+    if(race.date)t(race.date,W-PAD,104,'300 19px Barlow Condensed, sans-serif',DIM,'right');
+
+    // Page indicator (if multi-page)
+    if(totalPages>1){
+      t(`Page ${pageIndex+1} of ${totalPages}`,W-PAD,130,'300 17px Barlow Condensed, sans-serif',DIM,'right');
+    }
+
+    // Table setup
+    const TBL_TOP=5+HEADER_H+18;
+    const FOOTER_H=70;
+    const TH_H=30;
+    const avail=H-TBL_TOP-FOOTER_H-14;
+    const pageRows=sorted.slice(pageIndex*ROWS_PER_PAGE,(pageIndex+1)*ROWS_PER_PAGE);
+    const ROW_H=Math.max(38,Math.floor((avail-TH_H)/pageRows.length));
+
+    // Column x positions
+    const C={pos:PAD,clsp:PAD+52,num:PAD+100,drv:PAD+148,cls:PAD+460,dif:PAD+530,lap:PAD+596,pts:W-PAD};
+
+    // Table header bg
+    rr(0,TBL_TOP,W,TH_H,0,BG3);
+    ln(0,TBL_TOP+TH_H,W,TBL_TOP+TH_H,'rgba(255,255,255,0.1)');
+    const THY=TBL_TOP+TH_H-8;
+    const THF='700 14px Barlow Condensed, sans-serif';
+    t('POS',C.pos,THY,THF,MUTED);
+    t('CLS',C.clsp,THY,THF,MUTED);
+    t('#',C.num,THY,THF,MUTED);
+    t('DRIVER',C.drv,THY,THF,MUTED);
+    t('CLASS',C.cls,THY,THF,MUTED);
+    t('+/\u2212',C.dif,THY,THF,MUTED);
+    t('BEST LAP',C.lap,THY,THF,MUTED);
+    t('PTS',C.pts,THY,THF,MUTED,'right');
+
+    const RS=TBL_TOP+TH_H;
+    pageRows.forEach((r,i)=>{
+      const ry=RS+i*ROW_H;
+      const epos=r.dsq?null:(r.effectivePos||r.pos);
+      if(i%2===0)rr(0,ry,W,ROW_H,0,'rgba(255,255,255,0.012)');
+      if(!r.dsq&&epos){
+        const bc=epos===1?GOLD:epos===2?SILVER:epos===3?BRONZE:null;
+        if(bc)rr(0,ry,4,ROW_H,0,bc);
+      }
+      ctx.globalAlpha=r.dsq?0.35:1;
+      const TY=ry+ROW_H/2+7;
+
+      // Overall pos
+      if(r.dsq){t('DSQ',C.pos,TY,'700 17px Barlow Condensed, sans-serif',RED);}
+      else{const pc=epos===1?GOLD:epos===2?SILVER:epos===3?BRONZE:TEXT;t(epos,C.pos,TY,`700 ${epos<=3?'24':'20'}px Barlow Condensed, sans-serif`,pc);}
+
+      // Class pos
+      if(!r.dsq&&r._cp){
+        const cp=r._cp;const cc=cp===1?GOLD:cp===2?SILVER:cp===3?BRONZE:MUTED;
+        t(cp,C.clsp,TY,`${cp<=3?'700':'400'} 18px Barlow Condensed, sans-serif`,cc);
+      }
+
+      // Race number
+      t(r.raceNumber||'',C.num,TY,'300 18px Barlow Condensed, sans-serif',MUTED);
+
+      // Driver name
+      t(r.name,C.drv,TY,`${epos<=3&&!r.dsq?'700':'500'} ${epos<=3&&!r.dsq?'21':'19'}px Barlow, sans-serif`,TEXT);
+
+      // Class pill
+      const clsC=CC[r.carClass||'GT3']||MUTED;
+      ctx.font='700 13px Barlow Condensed, sans-serif';
+      const cpw=ctx.measureText(r.carClass||'GT3').width+14;
+      rr(C.cls,ry+ROW_H/2-10,cpw,20,3,hexA(clsC,0.15));
+      t(r.carClass||'GT3',C.cls+7,TY,'700 13px Barlow Condensed, sans-serif',clsC);
+
+      // Pos diff
+      if(!r.dsq){
+        const df=(r.gridPos||epos)-epos;
+        if(df>0)t(`+${df}`,C.dif,TY,'700 17px JetBrains Mono, monospace',GREEN);
+        else if(df<0)t(df,C.dif,TY,'700 17px JetBrains Mono, monospace',RED);
+        else t('\u2014',C.dif,TY,'400 17px JetBrains Mono, monospace',DIM);
+      }
+
+      // Lap time
+      const lapC=r.hasFl&&!r.dsq?ACCENT:MUTED;
+      t(msToTime(r.bestLap),C.lap,TY,`${r.hasFl&&!r.dsq?'700':'400'} 17px JetBrains Mono, monospace`,lapC);
+      if(r.hasFl&&!r.dsq)t('FL',C.lap+148,TY-11,'700 11px Barlow Condensed, sans-serif',ACCENT);
+
+      // Status badges (DNF / penalty) — right of pts
+      let bx=C.pts-8;
+      if(r.penaltyMs>0){
+        const ps=`+${(r.penaltyMs/1000).toFixed(0)}s`;
+        ctx.font='700 11px Barlow Condensed, sans-serif';
+        const bw=ctx.measureText(ps).width+12;bx-=bw+4;
+        rr(bx,ry+ROW_H/2-9,bw,18,3,hexA(ORANGE,0.2));
+        t(ps,bx+6,TY,'700 11px Barlow Condensed, sans-serif',ORANGE);
+      }
+      if(r.dnf&&!r.dsq){
+        const bw=32;bx-=bw+4;
+        rr(bx,ry+ROW_H/2-9,bw,18,3,hexA(RED,0.15));
+        t('DNF',bx+5,TY,'700 11px Barlow Condensed, sans-serif',RED);
+      }
+
+      // Points
+      const ptsC=!r.dsq&&epos<=3?(epos===1?GOLD:epos===2?SILVER:BRONZE):TEXT;
+      t(r.dsq?'0':(r.points||''),C.pts,TY,'700 21px Barlow Condensed, sans-serif',ptsC,'right');
+
+      ctx.globalAlpha=1;
+      ln(0,ry+ROW_H,W,ry+ROW_H,'rgba(255,255,255,0.035)');
+    });
+
+    // Footer
+    const FY=H-FOOTER_H;
+    rr(0,FY,W,FOOTER_H,0,BG2);
+    ln(0,FY,W,FY,'rgba(255,255,255,0.07)');
+    rr(0,H-4,W,4,0,ACCENT);
+
+    // Per-class FL in footer
+    if(race.classFL){
+      let fx=PAD;
+      Object.entries(race.classFL).forEach(([cls,drv])=>{
+        if(fx>W-220)return;
+        const res=race.results.find(r=>r.name===drv&&r.carClass===cls);
+        if(!res)return;
+        const clsC=CC[cls]||MUTED;
+        ctx.font='700 13px Barlow Condensed, sans-serif';
+        const cw=ctx.measureText(cls).width+14;
+        rr(fx,FY+16,cw,20,3,hexA(clsC,0.15));
+        t(cls,fx+7,FY+30,'700 13px Barlow Condensed, sans-serif',clsC);
+        fx+=cw+6;
+        const flStr=`FL: ${drv}  ${msToTime(res.bestLap)}`;
+        t(flStr,fx,FY+30,'300 15px Barlow Condensed, sans-serif',MUTED);
+        fx+=ctx.measureText(flStr).width+24;
+      });
+    }
+    t('HCCL',W-PAD,FY+30,'700 15px Barlow Condensed, sans-serif',DIM,'right');
+
+    return canvas;
+  }
+
+  // Generate and download all pages
+  const trackSlug=(race.track||'race').replace(/\s+/g,'_');
+  function downloadPage(i){
+    if(i>=totalPages)return;
+    const canvas=drawPage(i);
+    canvas.toBlob(blob=>{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=totalPages>1?`HCCL_${trackSlug}_p${i+1}.png`:`HCCL_${trackSlug}_result.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setTimeout(()=>downloadPage(i+1),400);
+    },'image/png');
+  }
+  downloadPage(0);
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────
+// ── MANUAL RACE ENTRY ─────────────────────────────────────
+let manualResults = [];
+function syncManualSelects(){
+  const ms=document.getElementById('manualSeason');
+  const mc=document.getElementById('manualChamp');
+  if(ms){const ov=ms.value;ms.innerHTML='<option value="">Select season\u2026</option>';store.seasons.forEach(s=>ms.innerHTML+=`<option value="${s.id}">${s.name}</option>`);if(ov)ms.value=ov;}
+  if(mc){const ov=mc.value;mc.innerHTML='<option value="">Select championship\u2026</option>';store.championships.forEach(c=>mc.innerHTML+=`<option value="${c.id}">${c.name}</option>`);if(ov)mc.value=ov;}
+}
+function renderManualList(){
+  const el=document.getElementById('manualDriverList');if(!el)return;
+  if(!manualResults.length){el.innerHTML='<div style="color:var(--dim);font-size:12px;">No drivers added yet.</div>';return;}
+  let h='<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">'+manualResults.length+' driver(s) — in finishing order</div>';
+  manualResults.forEach((r,i)=>{
+    const ci=getCarInfo(r.carModel);
+    h+=`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;flex-wrap:wrap;">
+      <span style="color:var(--dim);min-width:20px">${i+1}</span>
+      <span style="flex:1;font-weight:500">${r.name}</span>
+      ${classBadge(ci.class)}
+      <span style="color:var(--muted);font-size:12px">${ci.name}</span>
+      ${r.dnf?'<span class="badge b-dnf">DNF</span>':''}
+      <span class="del-btn" onclick="manualResults.splice(${i},1);renderManualList()">remove</span>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+function addManualDriver(){
+  const name=(document.getElementById('manualDriver')?.value||'').trim();
+  if(!name){const m=document.getElementById('manualMsg');if(m)m.innerHTML='<div class="msg msg-err">Driver name required.</div>';return;}
+  const carModel=document.getElementById('manualCarModel')?.value||'0';
+  const cupCat=parseInt(document.getElementById('manualCupCat')?.value)||0;
+  const raceNum=(document.getElementById('manualRaceNum')?.value||'').trim();
+  const gridPos=parseInt(document.getElementById('manualGrid')?.value)||manualResults.length+1;
+  const bestLap=parseInt(document.getElementById('manualLap')?.value)||0;
+  const lapCount=parseInt(document.getElementById('manualLaps')?.value)||0;
+  const dnf=document.getElementById('manualDnf')?.checked||false;
+  const ci=getCarInfo(carModel);
+  const pos=manualResults.length+1;
+  manualResults.push({name,carModel:parseInt(carModel)||0,carName:ci.name,carClass:ci.class,
+    cupCategory:cupCat,raceNumber:raceNum,gridPos,bestLap,lapCount,dnf,
+    pos,effectivePos:pos,points:0,dsq:false,penaltyMs:0,hasFl:false,totalTime:0});
+  ['manualDriver','manualRaceNum','manualGrid','manualLap','manualLaps'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  if(document.getElementById('manualDnf'))document.getElementById('manualDnf').checked=false;
+  const m=document.getElementById('manualMsg');if(m)m.innerHTML='';
+  renderManualList();
+  document.getElementById('manualDriver')?.focus();
+}
+function saveManualRace(){
+  const seasonId=document.getElementById('manualSeason')?.value;
+  const champId=document.getElementById('manualChamp')?.value;
+  const track=(document.getElementById('manualTrack')?.value||'').trim().toLowerCase();
+  const date=document.getElementById('manualDate')?.value||'';
+  const m=document.getElementById('manualMsg');
+  if(!seasonId||!champId||!track||!manualResults.length){if(m)m.innerHTML='<div class="msg msg-err">Fill in season, championship, track and add at least one driver.</div>';return;}
+  const race={id:uid(),filename:'manual',track,serverName:'Manual Entry',date,
+    sessionType:'R',seasonId,champId,results:[...manualResults],fastestLap:null,fastestDriver:null,classFL:{}};
+  recalcRacePoints(race);
+  store.races.push(race);save();
+  manualResults=[];
+  ['manualTrack','manualDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderManualList();
+  if(m)m.innerHTML='<div class="msg msg-ok">Race saved.</div>';
+  refreshAll();
+}
+function clearManualEntry(){
+  manualResults=[];renderManualList();
+  ['manualTrack','manualDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const m=document.getElementById('manualMsg');if(m)m.innerHTML='';
+}
+
+async function handleFiles(files){
+  showMsg('');
+  const seasonId=document.getElementById('uploadSeason').value;
+  const champId=document.getElementById('uploadChamp').value;
+  if(!seasonId||!champId){showMsg('Select a season and championship first.',true);return;}
+  const errors=[],ok=[];
+  for(const file of files){
+    const buf=await file.arrayBuffer();
+    const r=parseFile(buf,file.name,seasonId,champId);
+    if(r.ok){store.races.push(r.race);ok.push(file.name);}
+    else errors.push(`${file.name}: ${r.err}`);
+  }
+  if(ok.length)save();
+  if(errors.length)showMsg(errors.join('<br>'),true);
+  else if(ok.length)showMsg(`${ok.length} file(s) loaded.`,false);
+  refreshAll();
+}
+
+
+// ── CLOUD SYNC (JSONBin.io) ───────────────────────────────
+const PANTRY_API = 'https://getpantry.cloud/apiv1/pantry';
+let leagueCode = '';
+let pantryIdStored = '';
+function setSyncStatus(msg,cls=''){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  el.textContent=msg;el.className='sync-status'+(cls?' '+cls:'');
+}
+function showSyncMsg(msg,isErr){
+  const el=document.getElementById('syncMsg');
+  if(!el)return;
+  el.innerHTML=msg?`<div class="msg ${isErr?'msg-err':isErr===false?'msg-ok':'msg-info'}">${msg}</div>`:'';
+}
+function renderLeagueCodeDisplay(){
+  const el=document.getElementById('leagueCodeDisplay');
+  if(!el||!leagueCode)return;
+  const pid=pantryIdStored||'YOUR-PANTRY-ID';
+  const syncCode=`${pid}|${leagueCode}`;
+  el.innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Share this full sync code with your league members:</div>
+    <div class="sync-code-display" style="font-size:13px;letter-spacing:.06em;">${syncCode}</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:6px;">Members click "Sync" and paste the full code above.</div>`;
+}
+async function pushToCloud(){
+  const pantryId=(document.getElementById('pantryIdInput')?.value||pantryIdStored||'').trim();
+  if(!pantryId){showSyncMsg('Enter your Pantry ID first. Get one free at getpantry.cloud',true);return;}
+  if(!leagueCode){showSyncMsg('Set a league code first.',true);return;}
+  setSyncStatus('Pushing\u2026','loading');
+  // Store pantry ID locally (it's the admin secret)
+  pantryIdStored=pantryId;
+  save();
+  try{
+    const payload=JSON.stringify({store});
+    const res=await fetch(`${PANTRY_API}/${pantryId}/basket/${leagueCode}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:payload
+    });
+    if(!res.ok){const t=await res.text();throw new Error(`${res.status}: ${t.slice(0,120)}`);}
+    setSyncStatus('Synced \u2713','ok');
+    showSyncMsg(`Data pushed. Share code <strong>${leagueCode}</strong> with your league members.`,false);
+    renderLeagueCodeDisplay();
+  }catch(e){
+    setSyncStatus('Sync failed','err');
+    showSyncMsg('Push failed: '+e.message,true);
+  }
+}
+
+async function pullFromCloud(code){
+  setSyncStatus('Loading\u2026','loading');
+  // Try each known pantry ID from local storage (for admin), or just try anonymous read
+  // GetPantry allows public read without pantry ID if basket is public
+  try{
+    const res=await fetch(`${PANTRY_API}/${code.split('-')[0]}/basket/${code}`,{
+      headers:{'Content-Type':'application/json'}
+    });
+    // GetPantry public read: basket URL = pantryId/basket/basketName
+    // For members, the "code" they enter is actually "pantryId-leaguecode" combined
+    // OR we try the stored pantryId with given basket name
+    if(!res.ok)throw new Error('not found');
+    const data=await res.json();
+    if(!data||!data.store)throw new Error('Invalid data.');
+    store=data.store;
+    store.championships.forEach(c=>{if(!c.classSplits)c.classSplits=[];});
+    leagueCode=code;save();
+    setSyncStatus('Synced \u2713','ok');
+    return true;
+  }catch(e){
+    // Second attempt: treat full input as pantryId-basketName
+    try{
+      const parts=code.split('|');
+      if(parts.length<2)throw new Error('Use format PANTRYID|LEAGUECODE');
+      const [pid,basket]=parts;
+      const res2=await fetch(`${PANTRY_API}/${pid}/basket/${basket}`,{
+        headers:{'Content-Type':'application/json'}
+      });
+      if(!res2.ok)throw new Error('Code not found ('+res2.status+'). Format: PANTRYID|LEAGUECODE');
+      const data2=await res2.json();
+      if(!data2||!data2.store)throw new Error('Invalid data format.');
+      store=data2.store;
+      store.championships.forEach(c=>{if(!c.classSplits)c.classSplits=[];});
+      leagueCode=basket;save();
+      setSyncStatus('Synced \u2713','ok');
+      return true;
+    }catch(e2){
+      setSyncStatus('Not synced','err');
+      const errEl=document.getElementById('syncErr');
+      if(errEl){errEl.textContent=e2.message;errEl.style.display='block';}
+      return false;
+    }
+  }
+}
+document.getElementById('saveLeagueCode')?.addEventListener('click',()=>{
+  const code=(document.getElementById('leagueCodeInput')?.value||'').trim().toUpperCase();
+  if(!code)return;
+  leagueCode=code;save();renderLeagueCodeDisplay();
+  showSyncMsg('Code saved. Press "Push to cloud \u2191" to sync.',false);
+});
+document.getElementById('pushDataBtn')?.addEventListener('click',pushToCloud);
+
+function showMsg(msg,isErr){
+  const el=document.getElementById('msgBox');
+  el.innerHTML=msg?`<div class="msg ${isErr?'msg-err':'msg-ok'}">${msg}</div>`:'';
+}
+function showSyncMsg(msg,isErr){
+  const el=document.getElementById('syncMsg');
+  if(!el)return;
+  el.innerHTML=msg?`<div class="msg ${isErr?'msg-err':isErr===false?'msg-ok':'msg-info'}">${msg}</div>`:'';
+}
+
+// ── ADMIN ─────────────────────────────────────────────────
+function openLock(){
+  document.getElementById('lockScreen').classList.add('visible');
+  document.getElementById('pwInput').value='';
+  document.getElementById('lockErr').style.display='none';
+  setTimeout(()=>document.getElementById('pwInput').focus(),80);
+}
+function closeLock(){document.getElementById('lockScreen').classList.remove('visible');}
+function tryUnlock(){
+  if(document.getElementById('pwInput').value===ADMIN_PASSWORD){
+    adminUnlocked=true;closeLock();
+    document.getElementById('adminPanel').classList.add('visible');
+    document.getElementById('adminToggle').classList.add('active');
+    document.getElementById('adminToggle').textContent='Admin ✓';
+  }else{
+    document.getElementById('lockErr').style.display='block';
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+  }
+}
+function toggleAdmin(){
+  if(adminUnlocked){
+    adminUnlocked=false;
+    document.getElementById('adminPanel').classList.remove('visible');
+    document.getElementById('adminToggle').classList.remove('active');
+    document.getElementById('adminToggle').textContent='Admin';
+  }else openLock();
+}
+
+// ── REFRESH ───────────────────────────────────────────────
+function refreshAll(){
+  rebuildSelectors();renderSeasonChampList();renderSplitsList();renderAdminRaceList();syncManualSelects();
+  const active=document.querySelector('.nav-bar button.active')?.dataset.tab||'standings';
+  renderTab(active);
+}
+function renderTab(tab){
+  if(tab==='standings')renderStandings();
+  else if(tab==='drivers')renderDrivers();
+  else if(tab==='races')renderRaces();
+  else if(tab==='laps')renderLaps();
+  else if(tab==='alltime')renderAllTime();
+  else if(tab==='records')renderRecords();
+}
+
+// ── EVENTS ────────────────────────────────────────────────
+document.getElementById('adminToggle').addEventListener('click',toggleAdmin);
+document.getElementById('lockConfirm').addEventListener('click',tryUnlock);
+document.getElementById('lockCancel').addEventListener('click',closeLock);
+document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock();if(e.key==='Escape')closeLock();});
+document.getElementById('lockScreen').addEventListener('click',e=>{if(e.target===document.getElementById('lockScreen'))closeLock();});
+document.getElementById('penaltyOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('penaltyOverlay'))closePenaltyPanel();});
+document.getElementById('syncBtn').addEventListener('click',()=>{
+  document.getElementById('syncOverlay').classList.add('visible');
+  document.getElementById('syncErr').style.display='none';
+  setTimeout(()=>document.getElementById('syncCodeInput').focus(),80);
+});
+document.getElementById('syncCancel').addEventListener('click',()=>document.getElementById('syncOverlay').classList.remove('visible'));
+document.getElementById('syncOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('syncOverlay'))document.getElementById('syncOverlay').classList.remove('visible');});
+document.getElementById('syncConfirm').addEventListener('click',async()=>{
+  const code=document.getElementById('syncCodeInput').value.trim().toUpperCase();
+  if(!code)return;
+  document.getElementById('syncErr').style.display='none';
+  const ok=await pullFromCloud(code);
+  if(ok){document.getElementById('syncOverlay').classList.remove('visible');refreshAll();}
+  else{document.getElementById('syncErr').style.display='block';}
+});
+document.getElementById('syncCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('syncConfirm').click();});
+document.getElementById('manualOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('manualOverlay'))closeManualEntry();});
+
+// Export / Import / URL
+document.getElementById('exportDataBtn').addEventListener('click',exportDatabase);
+document.getElementById('importDataBtn').addEventListener('click',()=>document.getElementById('importFileInput').click());
+document.getElementById('importFileInput').addEventListener('change',e=>{if(e.target.files[0])importDatabase(e.target.files[0]);});
+// URL-based loading removed — use cloud sync instead.
+
+document.getElementById('addSeasonBtn').addEventListener('click',()=>{
+  const sn=document.getElementById('newSeasonName').value.trim();
+  const cn=document.getElementById('newChampName').value.trim();
+  if(sn){store.seasons.push({id:uid(),name:sn});document.getElementById('newSeasonName').value='';}
+  if(cn){store.championships.push({id:uid(),name:cn,classSplits:[]});document.getElementById('newChampName').value='';}
+  if(sn||cn){save();refreshAll();}
+});
+
+document.getElementById('addSplitBtn').addEventListener('click',()=>{
+  const champId=document.getElementById('splitChamp').value;
+  const name=document.getElementById('splitName').value.trim();
+  const cat=document.getElementById('splitCategory').value;
+  if(!champId||!name||cat==='')return;
+  const champ=store.championships.find(c=>c.id===champId);
+  if(!champ)return;
+  if(!champ.classSplits)champ.classSplits=[];
+  champ.classSplits.push({id:uid(),name,category:parseInt(cat)});
+  document.getElementById('splitName').value='';document.getElementById('splitCategory').value='';
+  save();refreshAll();
+});
+
+document.addEventListener('click',e=>{
+  if(e.target.dataset.delSeason){if(confirm('Remove season?')){store.seasons=store.seasons.filter(s=>s.id!==e.target.dataset.delSeason);save();refreshAll();}}
+  if(e.target.dataset.delChamp){if(confirm('Remove championship?')){store.championships=store.championships.filter(c=>c.id!==e.target.dataset.delChamp);save();refreshAll();}}
+  if(e.target.dataset.delRace){if(confirm('Remove this race?')){store.races=store.races.filter(r=>r.id!==e.target.dataset.delRace);save();refreshAll();}}
+  if(e.target.dataset.delSplit){
+    const champ=store.championships.find(c=>c.id===e.target.dataset.splitChamp);
+    if(champ&&confirm('Remove split?')){champ.classSplits=champ.classSplits.filter(s=>s.id!==e.target.dataset.delSplit);save();refreshAll();}
+  }
+});
+
+const dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
+dz.addEventListener('click',()=>fi.click());
+fi.addEventListener('change',e=>handleFiles(e.target.files));
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files);});
+
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  if(confirm('Clear ALL data?')){localStorage.removeItem(LS_KEY);store={seasons:[],championships:[],races:[]};leagueCode='';refreshAll();}
+});
+document.getElementById('manualAddDriverBtn')?.addEventListener('click',addManualDriver);
+document.getElementById('manualDriver')?.addEventListener('keydown',e=>{if(e.key==='Enter')addManualDriver();});
+document.getElementById('manualSaveBtn')?.addEventListener('click',saveManualRace);
+document.getElementById('manualClearBtn')?.addEventListener('click',clearManualEntry);
+
+document.getElementById('navBar').addEventListener('click',e=>{
+  const btn=e.target.closest('button');if(!btn)return;
+  document.querySelectorAll('.nav-bar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('visible'));
+  document.getElementById('tab-'+btn.dataset.tab).classList.add('visible');
+  renderTab(btn.dataset.tab);
+});
+
+['seasonFilter','champFilter','classFilter'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>renderTab(document.querySelector('.nav-bar button.active')?.dataset.tab||'standings'));
+});
+
+// ── INIT ─────────────────────────────────────────────────
+load();
+refreshAll();
+if(leagueCode){setSyncStatus('Code: '+leagueCode,'ok');renderLeagueCodeDisplay();}
+// Clear any old JSONBIN keys from localStorage
+Object.keys(localStorage).filter(k=>k.startsWith('hccl_bin_')).forEach(k=>localStorage.removeItem(k));
+// Note: URL auto-load removed. Use the Sync button (league code) instead.
+</script>
+</body>
+</html>
